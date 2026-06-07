@@ -1,0 +1,143 @@
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version to release, without a leading v, for example 0.1.0"
+        required: true
+        type: string
+      mode:
+        description: "Run validation only, or publish the mailbridge crate and create the GitHub release"
+        required: true
+        default: dry-run
+        type: choice
+        options:
+          - dry-run
+          - publish
+      release_summary:
+        description: "Optional short summary prepended to generated GitHub release notes"
+        required: false
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ inputs.version }}
+  cancel-in-progress: false
+
+env:
+  CARGO_TERM_COLOR: always
+  RUSTFLAGS: -D warnings
+  RELEASE_MODE: ${{ inputs.mode }}
+  RELEASE_VERSION: ${{ inputs.version }}
+  COMPREHENSIVE_FEATURES: hyvor-relay,api,rustls,queue-memory,rate-limit,smtp,telemetry,queue-sqlite,queue-postgres,queue-scylla,sendgrid,sendpulse,mailgun,dotenv,test-utils
+
+jobs:
+  validate:
+    name: Validate Release
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - name: Validate version input
+        run: |
+          case "$RELEASE_VERSION" in
+            v*)
+              echo "Use a plain semver version like 0.1.0, not $RELEASE_VERSION."
+              exit 1
+              ;;
+            ""|*[!0-9A-Za-z.+-]*)
+              echo "Invalid version: $RELEASE_VERSION"
+              exit 1
+              ;;
+          esac
+
+          if ! printf '%s\n' "$RELEASE_VERSION" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?(\+[0-9A-Za-z.-]+)?$'; then
+            echo "Version must be valid semver, for example 0.1.0 or 1.2.3-rc.1."
+            exit 1
+          fi
+
+          if [ "$RELEASE_MODE" = "publish" ] && [ "$GITHUB_REF_NAME" != "main" ]; then
+            echo "Publish releases must be run from main. Current ref: $GITHUB_REF_NAME."
+            exit 1
+          fi
+
+          if [ "$RELEASE_MODE" = "publish" ] && git rev-parse -q --verify "refs/tags/v$RELEASE_VERSION" >/dev/null; then
+            echo "Tag v$RELEASE_VERSION already exists."
+            exit 1
+          fi
+
+          if ! grep -q "^version = \"$RELEASE_VERSION\"$" Cargo.toml; then
+            echo "Cargo.toml [package] version must be $RELEASE_VERSION."
+            exit 1
+          fi
+      - run: cargo fmt --all -- --check
+      - run: cargo test
+      - run: cargo test --no-default-features
+      - run: cargo test --features queue-sqlite
+      - run: cargo test --features queue-scylla
+      - run: cargo test --features smtp
+      - run: cargo test --no-default-features --features hyvor-relay,api,native-tls
+      - run: cargo test --no-default-features --features "$COMPREHENSIVE_FEATURES"
+      - run: cargo clippy -- -D warnings
+      - run: cargo clippy --no-default-features --features "$COMPREHENSIVE_FEATURES" -- -D warnings
+      - run: cargo doc --no-deps --no-default-features --features "$COMPREHENSIVE_FEATURES"
+      - run: cargo publish --dry-run
+
+  dry-run:
+    name: Dry Run Summary
+    runs-on: ubuntu-latest
+    needs: validate
+    if: ${{ inputs.mode == 'dry-run' }}
+    steps:
+      - run: |
+          echo "Release dry run completed for $RELEASE_VERSION."
+          echo "No crates were published and no GitHub release was created."
+
+  publish-crate:
+    name: Publish Crate
+    runs-on: ubuntu-latest
+    needs: validate
+    if: ${{ inputs.mode == 'publish' }}
+    environment: crates-io
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Validate crates.io token
+        env:
+          CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+        run: |
+          if [ -z "$CARGO_REGISTRY_TOKEN" ]; then
+            echo "CARGO_REGISTRY_TOKEN repository or environment secret is required."
+            exit 1
+          fi
+      - name: Publish mailbridge
+        env:
+          CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+        run: |
+          cargo publish --dry-run
+          cargo publish
+
+  github-release:
+    name: Create GitHub Release
+    runs-on: ubuntu-latest
+    needs: publish-crate
+    if: ${{ inputs.mode == 'publish' }}
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ inputs.version }}
+          name: Mailbridge ${{ inputs.version }}
+          target_commitish: ${{ github.sha }}
+          body: ${{ inputs.release_summary }}
+          generate_release_notes: true
