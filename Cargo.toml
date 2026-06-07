@@ -2,7 +2,41 @@
 name = "mailbridge"
 version = "0.1.0"
 edition = "2024"
+rust-version = "1.91"
 license = "MIT OR Apache-2.0"
+repository = "https://github.com/boniface/mailbridge"
+homepage = "https://github.com/boniface/mailbridge"
+documentation = "https://docs.rs/mailbridge"
+description = "Provider-neutral transactional email library for Rust services"
+readme = "README.md"
+keywords = ["email", "smtp", "transactional", "queue", "mail"]
+categories = ["api-bindings", "email", "web-programming"]
+include = [
+    "Cargo.lock",
+    "Cargo.toml",
+    "README.md",
+    "examples/**",
+    "src/**",
+]
+
+[package.metadata.docs.rs]
+no-default-features = true
+features = [
+    "hyvor-relay",
+    "api",
+    "rustls",
+    "queue-memory",
+    "rate-limit",
+    "smtp",
+    "telemetry",
+    "queue-sqlite",
+    "queue-postgres",
+    "queue-scylla",
+    "sendgrid",
+    "sendpulse",
+    "mailgun",
+    "dotenv",
+]
 
 [features]
 default = ["hyvor-relay", "api", "rustls", "queue-memory", "rate-limit"]

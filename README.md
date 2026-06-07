@@ -1,5 +1,15 @@
 # mailbridge
 
+[![CI](https://github.com/boniface/mailbridge/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/boniface/mailbridge/actions/workflows/ci.yml)
+[![Scheduled Security](https://github.com/boniface/mailbridge/actions/workflows/scheduled-security.yml/badge.svg?branch=main)](https://github.com/boniface/mailbridge/actions/workflows/scheduled-security.yml)
+[![Release](https://github.com/boniface/mailbridge/actions/workflows/release.yml/badge.svg)](https://github.com/boniface/mailbridge/actions/workflows/release.yml)
+[![Crates.io](https://img.shields.io/crates/v/mailbridge.svg)](https://crates.io/crates/mailbridge)
+[![Docs.rs](https://docs.rs/mailbridge/badge.svg)](https://docs.rs/mailbridge)
+[![License](https://img.shields.io/crates/l/mailbridge.svg)](https://github.com/boniface/mailbridge#license)
+[![Rust Version](https://img.shields.io/badge/rust-1.91%2B-blue.svg)](https://github.com/boniface/mailbridge/blob/main/Cargo.toml)
+[![Rust Edition](https://img.shields.io/badge/edition-2024-blue.svg)](https://doc.rust-lang.org/edition-guide/rust-2024/)
+[![Dependencies](https://deps.rs/repo/github/boniface/mailbridge/status.svg)](https://deps.rs/repo/github/boniface/mailbridge)
+
 Provider-neutral transactional email library for Rust services.
 
 ## Features
