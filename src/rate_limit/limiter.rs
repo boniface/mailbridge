@@ -80,6 +80,12 @@ impl MailRateLimiter {
         self.domain_limiter(domain).until_ready().await;
     }
 
+    /// Checks rate-limit capacity without waiting.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error when the global or domain limiter has no immediate
+    /// capacity.
     pub fn check(&self, domain: &str) -> Result<()> {
         self.global.check().map_err(|_| MailError::RateLimited)?;
         self.domain_limiter(domain)

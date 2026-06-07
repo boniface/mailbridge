@@ -20,6 +20,12 @@ pub struct SqliteQueue {
 }
 
 impl SqliteQueue {
+    /// Opens a `SQLite` queue database and initializes its schema.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error when the path cannot be converted to `SQLite` options,
+    /// the database cannot be opened, or schema initialization fails.
     pub async fn connect(path: impl Into<PathBuf>) -> Result<Self> {
         let path = path.into();
         let url = sqlite_url(&path);
@@ -34,7 +40,7 @@ impl SqliteQueue {
         let queue = Self {
             path,
             pool,
-            lock_timeout: Duration::from_secs(300),
+            lock_timeout: Duration::from_mins(5),
         };
         queue.initialize().await?;
         Ok(queue)
@@ -45,7 +51,7 @@ impl SqliteQueue {
         Self {
             path: path.into(),
             pool,
-            lock_timeout: Duration::from_secs(300),
+            lock_timeout: Duration::from_mins(5),
         }
     }
 
@@ -55,6 +61,11 @@ impl SqliteQueue {
         self
     }
 
+    /// Initializes the `SQLite` queue schema and indexes.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error when any schema statement fails.
     pub async fn initialize(&self) -> Result<()> {
         sqlx::query(Self::schema_sql())
             .execute(&self.pool)

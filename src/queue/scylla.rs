@@ -12,9 +12,9 @@ use crate::error::{MailError, Result};
 use crate::queue::{MailQueue, QueueHandle, QueueId, QueueItem, QueuedEmail};
 
 const DEFAULT_BUCKET_COUNT: u16 = 64;
-const DEFAULT_LOCK_TIMEOUT: Duration = Duration::from_secs(300);
-const FNV_OFFSET_BASIS: u64 = 0xcbf29ce484222325;
-const FNV_PRIME: u64 = 0x100000001b3;
+const DEFAULT_LOCK_TIMEOUT: Duration = Duration::from_mins(5);
+const FNV_OFFSET_BASIS: u64 = 0xcbf2_9ce4_8422_2325;
+const FNV_PRIME: u64 = 0x0100_0000_01b3;
 
 #[derive(Debug, Clone)]
 pub struct ScyllaQueue {
@@ -44,14 +44,18 @@ struct QueueRecord {
 }
 
 impl ScyllaQueue {
+    /// Opens a `ScyllaDB` session and initializes queue tables.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error when the session cannot connect, identifiers are
+    /// invalid, or schema initialization fails.
     pub async fn connect(
         uri: impl AsRef<str>,
         keyspace: impl Into<String>,
         table: impl Into<String>,
     ) -> Result<Self> {
-        let session = SessionBuilder::new()
-            .known_node(uri.as_ref())
-            .build()
+        let session = Box::pin(SessionBuilder::new().known_node(uri.as_ref()).build())
             .await
             .map_err(queue_error)?;
         let queue = Self::from_session(session, keyspace, table)?;
@@ -59,6 +63,11 @@ impl ScyllaQueue {
         Ok(queue)
     }
 
+    /// Builds a queue from an existing `ScyllaDB` session.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error when keyspace or table identifiers are invalid.
     pub fn from_session(
         session: Session,
         keyspace: impl Into<String>,
@@ -67,6 +76,11 @@ impl ScyllaQueue {
         Self::from_shared_session(Arc::new(session), keyspace, table)
     }
 
+    /// Builds a queue from a shared `ScyllaDB` session.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error when keyspace or table identifiers are invalid.
     pub fn from_shared_session(
         session: Arc<Session>,
         keyspace: impl Into<String>,
@@ -80,6 +94,11 @@ impl ScyllaQueue {
         })
     }
 
+    /// Initializes the `ScyllaDB` queue tables.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error when any schema statement fails.
     pub async fn initialize(&self) -> Result<()> {
         self.query(self.items_schema_cql(), &[]).await?;
         self.query(self.due_schema_cql(), &[]).await?;
@@ -92,6 +111,12 @@ impl ScyllaQueue {
         QueueHandle::new(self)
     }
 
+    /// Sets the number of queue scan buckets.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error when `bucket_count` is outside the supported CQL
+    /// `smallint` range.
     pub fn with_bucket_count(mut self, bucket_count: u16) -> Result<Self> {
         validate_bucket_count(bucket_count)?;
         self.bucket_count = bucket_count;
@@ -688,7 +713,7 @@ mod tests {
     #[tokio::test]
     async fn scylla_queue_reserves_and_marks_sent_when_database_is_available() {
         let _guard = SCYLLA_TEST_LOCK.lock().await;
-        let Some(queue) = test_queue().await else {
+        let Some(queue) = Box::pin(test_queue()).await else {
             return;
         };
         let id = queue
@@ -717,7 +742,7 @@ mod tests {
     async fn scylla_queue_concurrent_workers_do_not_reserve_same_message_when_database_is_available()
      {
         let _guard = SCYLLA_TEST_LOCK.lock().await;
-        let Some(queue) = test_queue().await else {
+        let Some(queue) = Box::pin(test_queue()).await else {
             return;
         };
         for index in 0..4 {
@@ -782,7 +807,7 @@ mod tests {
             epoch_millis(),
             SCYLLA_TABLE_COUNTER.fetch_add(1, Ordering::Relaxed)
         );
-        let queue = ScyllaQueue::connect(uri, keyspace, table)
+        let queue = Box::pin(ScyllaQueue::connect(uri, keyspace, table))
             .await
             .expect("scylla test queue connects");
         Some(queue.with_bucket_count(8).expect("valid bucket count"))

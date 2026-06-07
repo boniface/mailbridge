@@ -19,6 +19,12 @@ pub struct PostgresQueue {
 }
 
 impl PostgresQueue {
+    /// Opens a `PostgreSQL` queue pool and initializes its schema.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error when the database connection or schema initialization
+    /// fails.
     pub async fn connect(database_url: SecretString) -> Result<Self> {
         let pool = PgPoolOptions::new()
             .max_connections(5)
@@ -28,7 +34,7 @@ impl PostgresQueue {
         let queue = Self {
             database_url,
             pool,
-            lock_timeout: Duration::from_secs(300),
+            lock_timeout: Duration::from_mins(5),
         };
         queue.initialize().await?;
         Ok(queue)
@@ -39,7 +45,7 @@ impl PostgresQueue {
         Self {
             database_url,
             pool,
-            lock_timeout: Duration::from_secs(300),
+            lock_timeout: Duration::from_mins(5),
         }
     }
 
@@ -49,6 +55,11 @@ impl PostgresQueue {
         self
     }
 
+    /// Initializes the `PostgreSQL` queue schema and indexes.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error when advisory locking or any schema statement fails.
     pub async fn initialize(&self) -> Result<()> {
         let mut tx = self.pool.begin().await.map_err(queue_error)?;
         sqlx::query("select pg_advisory_xact_lock(hashtext('mailbridge_email_queue_schema'))")

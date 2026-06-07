@@ -1,4 +1,4 @@
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum TelemetryEvent {
     SendStarted,
     SendAccepted,
@@ -75,7 +75,7 @@ pub fn emit(event: TelemetryEvent, fields: &TelemetryFields<'_>) {
 
 #[cfg(feature = "telemetry")]
 fn emit_inner(event: TelemetryEvent, fields: &TelemetryFields<'_>) {
-    let event_name = event_name(&event);
+    let event_name = event_name(event);
     tracing::info!(
         event = event_name,
         domain = fields.domain,
@@ -91,7 +91,7 @@ fn emit_inner(event: TelemetryEvent, fields: &TelemetryFields<'_>) {
 fn emit_inner(_event: TelemetryEvent, _fields: &TelemetryFields<'_>) {}
 
 #[cfg(feature = "telemetry")]
-fn event_name(event: &TelemetryEvent) -> &'static str {
+fn event_name(event: TelemetryEvent) -> &'static str {
     match event {
         TelemetryEvent::SendStarted => "mailbridge.send.started",
         TelemetryEvent::SendAccepted => "mailbridge.send.accepted",

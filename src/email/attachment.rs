@@ -10,6 +10,12 @@ pub struct Attachment {
 }
 
 impl Attachment {
+    /// Creates and validates an attachment.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error when the file name or content type is empty,
+    /// malformed, or contains control characters.
     pub fn new(
         file_name: impl Into<String>,
         content_type: impl Into<String>,

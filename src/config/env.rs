@@ -33,6 +33,12 @@ impl MailbridgeConfig {
         MailbridgeConfigBuilder::default()
     }
 
+    /// Builds configuration from `RELAY_*` environment variables.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error when required environment variables are missing,
+    /// malformed, or select a disabled queue backend.
     pub fn from_env() -> Result<Self> {
         #[cfg(feature = "dotenv")]
         {
@@ -143,6 +149,11 @@ pub struct MailbridgeConfigBuilder {
 }
 
 impl MailbridgeConfigBuilder {
+    /// Sets and validates the Relay API base URL.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error when `url` is not a valid URL.
     pub fn api_base_url(mut self, url: impl AsRef<str>) -> Result<Self> {
         self.api_base_url =
             Some(Url::parse(url.as_ref()).map_err(|error| {
@@ -159,13 +170,18 @@ impl MailbridgeConfigBuilder {
 
     #[must_use]
     pub fn allowed_from_domain(mut self, domain: impl Into<String>) -> Self {
-        let domain = normalize_domain(domain.into());
+        let domain = normalize_domain(&domain.into());
         if !domain.is_empty() {
             self.allowed_from_domains.insert(domain);
         }
         self
     }
 
+    /// Sets the default sender address.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error when the sender address is invalid.
     pub fn default_from(
         mut self,
         name: impl Into<String>,
@@ -211,6 +227,12 @@ impl MailbridgeConfigBuilder {
         self
     }
 
+    /// Builds a validated configuration value.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error when required fields are missing, values are invalid,
+    /// or the selected queue backend is not available with enabled features.
     pub fn build(self) -> Result<MailbridgeConfig> {
         let api_base_url = self
             .api_base_url
@@ -229,6 +251,11 @@ impl MailbridgeConfigBuilder {
             return Err(MailError::Config("relay api key is required".to_owned()));
         }
 
+        #[cfg(not(all(
+            feature = "queue-sqlite",
+            feature = "queue-postgres",
+            feature = "queue-scylla"
+        )))]
         validate_queue_backend_features(&self.queue_backend)?;
         validate_rate_limit(&self.rate_limit)?;
 
@@ -299,6 +326,11 @@ pub struct SmtpConfig {
 }
 
 impl SmtpConfig {
+    /// Builds SMTP configuration.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error when `host` or `username` is empty.
     pub fn new(
         host: impl Into<String>,
         port: u16,
@@ -389,7 +421,7 @@ fn optional_env_u64(key: &str) -> Result<Option<u64>> {
 fn parse_domains(value: &str) -> Result<BTreeSet<String>> {
     let domains = value
         .split(',')
-        .map(|domain| normalize_domain(domain.to_owned()))
+        .map(normalize_domain)
         .filter(|domain| !domain.is_empty())
         .collect::<BTreeSet<_>>();
 
@@ -429,6 +461,11 @@ fn parse_queue_backend() -> Result<QueueBackend> {
     }
 }
 
+#[cfg(not(all(
+    feature = "queue-sqlite",
+    feature = "queue-postgres",
+    feature = "queue-scylla"
+)))]
 fn validate_queue_backend_features(backend: &QueueBackend) -> Result<()> {
     match backend {
         QueueBackend::Memory => Ok(()),
@@ -481,12 +518,24 @@ fn validate_rate_limit(config: &RateLimitConfig) -> Result<()> {
     Ok(())
 }
 
-fn normalize_domain(domain: String) -> String {
+fn normalize_domain(domain: &str) -> String {
     domain.trim().trim_matches('.').to_ascii_lowercase()
 }
 
 fn secret_string(value: String) -> SecretString {
     SecretString::new(value.into_boxed_str())
+}
+
+impl QueueBackend {
+    #[must_use]
+    pub const fn kind(&self) -> &'static str {
+        match self {
+            Self::Memory => "memory",
+            Self::Sqlite { .. } => "sqlite",
+            Self::Postgres { .. } => "postgres",
+            Self::Scylla { .. } => "scylla",
+        }
+    }
 }
 
 #[cfg(test)]
@@ -547,17 +596,5 @@ mod tests {
             .expect_err("zero rate should be rejected");
 
         assert!(matches!(error, MailError::Config(_)));
-    }
-}
-
-impl QueueBackend {
-    #[must_use]
-    pub const fn kind(&self) -> &'static str {
-        match self {
-            Self::Memory => "memory",
-            Self::Sqlite { .. } => "sqlite",
-            Self::Postgres { .. } => "postgres",
-            Self::Scylla { .. } => "scylla",
-        }
     }
 }

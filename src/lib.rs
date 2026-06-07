@@ -28,8 +28,8 @@
 //! `queue-memory` is intended for tests, local development, and workloads that can
 //! tolerate losing queued mail on process restart. Use `queue-sqlite` for
 //! single-node durable queueing and `queue-postgres` for multi-worker durable
-//! queueing in applications that already operate PostgreSQL. Use
-//! `queue-scylla` for high-throughput ScyllaDB deployments where bucket count,
+//! queueing in applications that already operate `PostgreSQL`. Use
+//! `queue-scylla` for high-throughput `ScyllaDB` deployments where bucket count,
 //! lease timeout, replication, compaction, and dead-letter retention are tuned
 //! by the owning application.
 //!
@@ -39,9 +39,9 @@
 //!
 //! Live durable-backend tests are environment gated:
 //!
-//! - `MAILBRIDGE_TEST_POSTGRES_URL` for PostgreSQL.
+//! - `MAILBRIDGE_TEST_POSTGRES_URL` for `PostgreSQL`.
 //! - `MAILBRIDGE_TEST_SCYLLA_URI`, `MAILBRIDGE_TEST_SCYLLA_KEYSPACE`, and
-//!   `MAILBRIDGE_TEST_SCYLLA_TABLE` for ScyllaDB.
+//!   `MAILBRIDGE_TEST_SCYLLA_TABLE` for `ScyllaDB`.
 
 #[cfg(all(feature = "rustls", feature = "native-tls"))]
 compile_error!("features `rustls` and `native-tls` cannot be enabled together");

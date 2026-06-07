@@ -108,6 +108,12 @@ impl<P> MailClient<P> {
         }
     }
 
+    /// Builds a client from configuration without opening durable queue
+    /// connections.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error when the configuration selects a durable queue backend.
     pub fn from_config(provider: P, config: &MailbridgeConfig) -> Result<Self> {
         if !matches!(config.queue_backend(), crate::config::QueueBackend::Memory) {
             return Err(MailError::Config(
@@ -142,6 +148,12 @@ impl<P> MailClient<P> {
         Ok(builder.build())
     }
 
+    /// Builds a client from configuration and initializes the configured queue.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error when queue initialization fails or the selected queue
+    /// feature is not enabled.
     pub async fn try_from_config(provider: P, config: &MailbridgeConfig) -> Result<Self> {
         let builder = MailClientBuilder::new(provider).allowed_from_domains(
             config
@@ -159,7 +171,7 @@ impl<P> MailClient<P> {
                 .map(std::string::ToString::to_string),
         ));
 
-        let queue = QueueHandle::from_backend(config.queue_backend()).await?;
+        let queue = Box::pin(QueueHandle::from_backend(config.queue_backend())).await?;
         Ok(builder.queue(queue).build())
     }
 
@@ -197,6 +209,11 @@ impl<P> MailClient<P>
 where
     P: MailProvider,
 {
+    /// Sends a validated message, waiting for any configured rate limiter.
+    ///
+    /// # Errors
+    ///
+    /// Returns validation, rate-limit, provider, or transport errors.
     pub async fn send(&self, message: EmailMessage) -> Result<SendReceipt> {
         self.validate(&message)?;
         self.wait_for_rate_limit(&message).await;
@@ -225,6 +242,11 @@ where
         result
     }
 
+    /// Sends a validated message without waiting for rate-limit capacity.
+    ///
+    /// # Errors
+    ///
+    /// Returns validation, rate-limit, provider, or transport errors.
     pub async fn try_send(&self, message: EmailMessage) -> Result<SendReceipt> {
         self.validate(&message)?;
         if let Err(error) = self.check_rate_limit(&message) {
@@ -260,6 +282,12 @@ where
         result
     }
 
+    /// Enqueues a validated message on the configured queue.
+    ///
+    /// # Errors
+    ///
+    /// Returns validation errors, queue backend errors, or an error when no
+    /// queue is configured.
     pub async fn enqueue(&self, message: EmailMessage) -> Result<QueueId> {
         self.validate(&message)?;
         let domain = message.from_address().domain().to_owned();

@@ -35,6 +35,12 @@ pub struct SmtpClient {
 
 #[cfg(feature = "smtp")]
 impl SmtpClient {
+    /// Builds an SMTP provider from library configuration.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error when SMTP configuration is missing or the transport
+    /// cannot be constructed.
     pub fn from_config(config: &MailbridgeConfig) -> Result<Self> {
         let smtp = config
             .smtp()
@@ -67,7 +73,10 @@ impl MailProvider for SmtpClient {
             .idempotency_key()
             .map_or_else(|| uuid::Uuid::new_v4().to_string(), str::to_owned);
         let message = lettre_message(message)?;
-        self.transport.send(message).await.map_err(map_smtp_error)?;
+        self.transport
+            .send(message)
+            .await
+            .map_err(|error| map_smtp_error(&error))?;
 
         Ok(SendReceipt::new(
             self.provider_name(),
@@ -180,7 +189,7 @@ fn secret_copy(secret: &SecretString) -> SecretString {
 }
 
 #[cfg(feature = "smtp")]
-fn map_smtp_error(error: SmtpError) -> MailError {
+fn map_smtp_error(error: &SmtpError) -> MailError {
     let message = format!("smtp send failed: {error}");
     if error.is_permanent() {
         return MailError::RelayRejected {

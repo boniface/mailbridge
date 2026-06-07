@@ -79,6 +79,12 @@ where
         }
     }
 
+    /// Processes one queue batch.
+    ///
+    /// # Errors
+    ///
+    /// Returns provider or queue backend errors encountered while reserving,
+    /// sending, retrying, or dead-lettering messages.
     pub async fn run_once(&self) -> Result<usize> {
         let batch = self
             .queue
@@ -93,6 +99,11 @@ where
         Ok(count)
     }
 
+    /// Processes queue batches until shutdown is requested.
+    ///
+    /// # Errors
+    ///
+    /// Returns provider or queue backend errors encountered during processing.
     pub async fn run_until_shutdown(
         &self,
         mut shutdown: tokio::sync::watch::Receiver<bool>,

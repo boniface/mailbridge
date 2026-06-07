@@ -164,6 +164,12 @@ impl QueueHandle {
         Self::memory(1024)
     }
 
+    /// Builds a queue handle for a configured backend.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error when the backend feature is disabled or the durable
+    /// backend cannot be initialized.
     pub async fn from_backend(backend: &QueueBackend) -> Result<Self> {
         match backend {
             QueueBackend::Memory => Ok(Self::memory_default()),
@@ -204,9 +210,13 @@ impl QueueHandle {
             } => {
                 #[cfg(feature = "queue-scylla")]
                 {
-                    crate::queue::ScyllaQueue::connect(uri.clone(), keyspace.clone(), table.clone())
-                        .await
-                        .map(crate::queue::ScyllaQueue::handle)
+                    Box::pin(crate::queue::ScyllaQueue::connect(
+                        uri.clone(),
+                        keyspace.clone(),
+                        table.clone(),
+                    ))
+                    .await
+                    .map(crate::queue::ScyllaQueue::handle)
                 }
                 #[cfg(not(feature = "queue-scylla"))]
                 {
@@ -219,10 +229,20 @@ impl QueueHandle {
         }
     }
 
+    /// Returns the number of pending messages.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error when the backing queue cannot count pending messages.
     pub async fn pending_len(&self) -> Result<usize> {
         self.inner.pending_len().await
     }
 
+    /// Returns the number of dead-lettered messages.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error when the backing queue cannot count dead letters.
     pub async fn dead_letter_len(&self) -> Result<usize> {
         self.inner.dead_letter_len().await
     }

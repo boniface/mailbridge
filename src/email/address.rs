@@ -13,8 +13,14 @@ pub struct EmailAddress {
 }
 
 impl EmailAddress {
+    /// Creates and validates an address with an optional display name.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error when the display name contains control characters or
+    /// the mailbox is malformed.
     pub fn new(name: impl Into<String>, email: impl Into<String>) -> Result<Self> {
-        let name = normalize_name(name.into())?;
+        let name = normalize_name(&name.into())?;
         let email = email.into();
         let domain = parse_domain(&email)?;
 
@@ -25,6 +31,11 @@ impl EmailAddress {
         })
     }
 
+    /// Creates and validates an address without a display name.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error when the mailbox is malformed.
     pub fn without_name(email: impl Into<String>) -> Result<Self> {
         let email = email.into();
         let domain = parse_domain(&email)?;
@@ -60,8 +71,8 @@ impl EmailAddress {
     }
 }
 
-fn normalize_name(name: String) -> Result<Option<String>> {
-    validate_no_control_chars(&name, "address name")?;
+fn normalize_name(name: &str) -> Result<Option<String>> {
+    validate_no_control_chars(name, "address name")?;
 
     if name.trim().is_empty() {
         return Ok(None);

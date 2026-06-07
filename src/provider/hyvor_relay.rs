@@ -24,6 +24,12 @@ pub struct HyvorRelayProvider {
 }
 
 impl HyvorRelayProvider {
+    /// Builds a Relay provider from library configuration.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error when the HTTP client or Relay sends URL cannot be
+    /// constructed.
     pub fn from_config(config: &MailbridgeConfig) -> Result<Self> {
         let http = reqwest::Client::builder()
             .timeout(config.request_timeout())
@@ -256,7 +262,7 @@ fn sends_url(base_url: &Url) -> Result<Url> {
 fn send_uuid_url(sends_url: &Url, id: &MessageId) -> Result<Url> {
     let mut url = sends_url.clone();
     url.path_segments_mut()
-        .map_err(|_| MailError::Config("relay sends url cannot be a base URL".to_owned()))?
+        .map_err(|()| MailError::Config("relay sends url cannot be a base URL".to_owned()))?
         .push("uuid")
         .push(id.as_str());
 
@@ -266,7 +272,6 @@ fn send_uuid_url(sends_url: &Url, id: &MessageId) -> Result<Url> {
 fn map_status_error(status: u16, message: String) -> Result<SendReceipt> {
     match status {
         401 | 403 => Err(MailError::Authentication),
-        429 => Err(MailError::RelayRejected { status, message }),
         500..=599 => Err(MailError::Temporary(format!(
             "relay temporary failure: status={status}, message={message}"
         ))),

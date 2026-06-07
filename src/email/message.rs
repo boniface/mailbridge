@@ -97,6 +97,12 @@ impl EmailMessage {
         self
     }
 
+    /// Validates message limits, headers, body content, attachments, and
+    /// idempotency metadata.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error when the message violates validation constraints.
     pub fn validate(&self) -> Result<()> {
         validate_recipients(self.recipient_count())?;
         validate_bodies(self.body_text(), self.body_html())?;
@@ -109,6 +115,12 @@ impl EmailMessage {
             .try_for_each(|(name, value)| validate_header(name, value))
     }
 
+    /// Validates the sender domain against an allowlist.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error when the sender domain is not present in
+    /// `allowed_domains`.
     pub fn validate_sender_domain(&self, allowed_domains: &BTreeSet<String>) -> Result<()> {
         if allowed_domains.contains(self.from.domain()) {
             return Ok(());
@@ -140,21 +152,41 @@ pub struct EmailMessageBuilder {
 }
 
 impl EmailMessageBuilder {
+    /// Sets the sender address.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error when the sender address is invalid.
     pub fn from(mut self, name: impl Into<String>, email: impl Into<String>) -> Result<Self> {
         self.from = Some(EmailAddress::new(name, email)?);
         Ok(self)
     }
 
+    /// Adds a `To` recipient.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error when the recipient address is invalid.
     pub fn to(mut self, name: impl Into<String>, email: impl Into<String>) -> Result<Self> {
         self.to.push(EmailAddress::new(name, email)?);
         Ok(self)
     }
 
+    /// Adds a `Cc` recipient.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error when the recipient address is invalid.
     pub fn cc(mut self, name: impl Into<String>, email: impl Into<String>) -> Result<Self> {
         self.cc.push(EmailAddress::new(name, email)?);
         Ok(self)
     }
 
+    /// Adds a `Bcc` recipient.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error when the recipient address is invalid.
     pub fn bcc(mut self, name: impl Into<String>, email: impl Into<String>) -> Result<Self> {
         self.bcc.push(EmailAddress::new(name, email)?);
         Ok(self)
@@ -178,6 +210,12 @@ impl EmailMessageBuilder {
         self
     }
 
+    /// Adds a custom header.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error when the header name is forbidden or malformed, or the
+    /// value contains control characters.
     pub fn header(mut self, name: impl Into<String>, value: impl Into<String>) -> Result<Self> {
         let name = name.into();
         let value = value.into();
@@ -186,6 +224,11 @@ impl EmailMessageBuilder {
         Ok(self)
     }
 
+    /// Adds an attachment.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error when the message would exceed the attachment limit.
     pub fn attachment(mut self, attachment: Attachment) -> Result<Self> {
         self.attachments.push(attachment);
         validate_attachments(&self.attachments)?;
@@ -198,6 +241,11 @@ impl EmailMessageBuilder {
         self
     }
 
+    /// Builds and validates an email message.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error when required fields are missing or validation fails.
     pub fn build(self) -> Result<EmailMessage> {
         let from = self
             .from
