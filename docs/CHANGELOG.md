@@ -8,6 +8,16 @@ This project follows semantic versioning after the first crates.io release.
 
 No unreleased changes.
 
+## 0.1.2
+
+### Fixed
+
+- Changed Hyvor Relay sender serialization for named addresses. The Hyvor
+  provider now sends named `from` addresses as Relay-compatible objects, for
+  example `{ "email": "no-reply@audience-desk.com", "name": "Audience Desk Support" }`,
+  instead of formatted mailbox strings such as
+  `"Audience Desk Support <no-reply@audience-desk.com>"`.
+
 ## 0.1.1
 
 ### Added
