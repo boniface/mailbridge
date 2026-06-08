@@ -13,7 +13,7 @@ use crate::email::{Attachment, EmailAddress, EmailMessage};
 use crate::error::{MailError, Result};
 use crate::provider::{MailProvider, SendStatus};
 
-type Recipients<'a> = Vec<Cow<'a, str>>;
+type Recipients<'a> = Vec<ApiAddress<'a>>;
 
 #[derive(Debug)]
 pub struct HyvorRelayProvider {
@@ -131,7 +131,7 @@ impl MailProvider for HyvorRelayProvider {
 
 #[derive(Debug, Clone, PartialEq, Serialize)]
 struct ApiSendRequest<'a> {
-    from: Cow<'a, str>,
+    from: ApiAddress<'a>,
     to: Recipients<'a>,
     #[serde(skip_serializing_if = "Recipients::is_empty")]
     cc: Recipients<'a>,
@@ -151,7 +151,7 @@ struct ApiSendRequest<'a> {
 impl<'a> ApiSendRequest<'a> {
     fn from_message(message: &'a EmailMessage) -> Self {
         Self {
-            from: Cow::Owned(message.from_address().formatted()),
+            from: ApiAddress::from(message.from_address()),
             to: recipients(message.to()),
             cc: recipients(message.cc()),
             bcc: recipients(message.bcc()),
@@ -168,6 +168,28 @@ impl<'a> ApiSendRequest<'a> {
                 .iter()
                 .map(ApiAttachment::from)
                 .collect(),
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize)]
+#[serde(untagged)]
+enum ApiAddress<'a> {
+    Email(Cow<'a, str>),
+    Named {
+        email: Cow<'a, str>,
+        name: Cow<'a, str>,
+    },
+}
+
+impl<'a> From<&'a EmailAddress> for ApiAddress<'a> {
+    fn from(address: &'a EmailAddress) -> Self {
+        match address.name() {
+            Some(name) => Self::Named {
+                email: Cow::Borrowed(address.email()),
+                name: Cow::Borrowed(name),
+            },
+            None => Self::Email(Cow::Borrowed(address.email())),
         }
     }
 }
@@ -242,10 +264,7 @@ impl ApiSendRecipient {
 }
 
 fn recipients(addresses: &[EmailAddress]) -> Recipients<'_> {
-    addresses
-        .iter()
-        .map(|address| Cow::Owned(address.formatted()))
-        .collect()
+    addresses.iter().map(ApiAddress::from).collect()
 }
 
 fn sends_url(base_url: &Url) -> Result<Url> {
@@ -320,8 +339,10 @@ mod tests {
         let request = ApiSendRequest::from_message(&message);
         let json = serde_json::to_value(&request).expect("serializable request");
 
-        assert_eq!(json["from"], "Hashcode <no-reply@example.com>");
-        assert_eq!(json["to"][0], "User <user@example.net>");
+        assert_eq!(json["from"]["email"], "no-reply@example.com");
+        assert_eq!(json["from"]["name"], "Hashcode");
+        assert_eq!(json["to"][0]["email"], "user@example.net");
+        assert_eq!(json["to"][0]["name"], "User");
         assert_eq!(json["subject"], "Test");
         assert_eq!(json["body_text"], "plain");
         assert_eq!(json["headers"]["X-App"], "accounts");
