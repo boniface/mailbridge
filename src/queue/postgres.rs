@@ -326,7 +326,7 @@ impl MailQueue for PostgresQueue {
     }
 }
 
-async fn count_rows(pool: &PgPool, sql: &str) -> Result<usize> {
+async fn count_rows(pool: &PgPool, sql: &'static str) -> Result<usize> {
     let count = sqlx::query(sql)
         .fetch_one(pool)
         .await

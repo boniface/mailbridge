@@ -1,9 +1,9 @@
 [package]
 name = "mailbridge"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2024"
-rust-version = "1.91"
-license = "MIT OR Apache-2.0"
+rust-version = "1.94"
+license = "MIT"
 repository = "https://github.com/boniface/mailbridge"
 homepage = "https://github.com/boniface/mailbridge"
 documentation = "https://docs.rs/mailbridge"
@@ -14,7 +14,9 @@ categories = ["api-bindings", "email", "web-programming"]
 include = [
     "Cargo.lock",
     "Cargo.toml",
+    "LICENSE",
     "README.md",
+    "docs/**",
     "examples/**",
     "src/**",
 ]
@@ -46,11 +48,11 @@ hyvor-relay = []
 sendgrid = []
 sendpulse = []
 mailgun = []
-rustls = ["reqwest/rustls-tls"]
+rustls = ["reqwest/rustls"]
 native-tls = ["reqwest/native-tls"]
 queue-memory = []
-queue-sqlite = ["dep:sqlx", "sqlx/sqlite", "sqlx/runtime-tokio-rustls"]
-queue-postgres = ["dep:sqlx", "sqlx/postgres", "sqlx/runtime-tokio-rustls"]
+queue-sqlite = ["dep:sqlx", "sqlx/sqlite", "sqlx/runtime-tokio", "sqlx/tls-rustls"]
+queue-postgres = ["dep:sqlx", "sqlx/postgres", "sqlx/runtime-tokio", "sqlx/tls-rustls"]
 queue-scylla = ["dep:scylla"]
 rate-limit = ["dep:governor"]
 dotenv = ["dep:dotenvy"]
@@ -64,12 +66,12 @@ base64 = "0.22"
 dotenvy = { version = "0.15", optional = true }
 governor = { version = "0.10", optional = true }
 lettre = { version = "0.11", optional = true, default-features = false, features = ["tokio1-rustls-tls", "smtp-transport", "builder"] }
-reqwest = { version = "0.12", optional = true, default-features = false, features = ["json"] }
+reqwest = { version = "0.13", optional = true, default-features = false, features = ["json"] }
 scylla = { version = "1", optional = true }
 secrecy = "0.10"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
-sqlx = { version = "0.8", optional = true, default-features = false }
+sqlx = { version = "0.9", optional = true, default-features = false }
 thiserror = "2"
 tokio = { version = "1", features = ["macros", "rt-multi-thread", "time", "sync"] }
 tracing = { version = "0.1", optional = true }

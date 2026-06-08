@@ -6,11 +6,21 @@
 [![Crates.io](https://img.shields.io/crates/v/mailbridge.svg)](https://crates.io/crates/mailbridge)
 [![Docs.rs](https://docs.rs/mailbridge/badge.svg)](https://docs.rs/mailbridge)
 [![License](https://img.shields.io/crates/l/mailbridge.svg)](https://github.com/boniface/mailbridge#license)
-[![Rust Version](https://img.shields.io/badge/rust-1.91%2B-blue.svg)](https://github.com/boniface/mailbridge/blob/main/Cargo.toml)
+[![Rust Version](https://img.shields.io/badge/rust-1.94%2B-blue.svg)](https://github.com/boniface/mailbridge/blob/main/Cargo.toml)
 [![Rust Edition](https://img.shields.io/badge/edition-2024-blue.svg)](https://doc.rust-lang.org/edition-guide/rust-2024/)
 [![Dependencies](https://deps.rs/repo/github/boniface/mailbridge/status.svg)](https://deps.rs/repo/github/boniface/mailbridge)
 
 Provider-neutral transactional email library for Rust services.
+
+## Documentation
+
+- [Usage guide](docs/usage.md)
+- [Architecture and design](docs/architecture-and-design.md)
+- [Roadmap](docs/ROADMAP.md)
+- [Changelog](docs/CHANGELOG.md)
+- [Contributing](docs/CONTRIBUTING.md)
+- [Contributors](docs/CONTRIBUTORS.md)
+- [Security policy](docs/SECURITY.md)
 
 ## Features
 
@@ -64,3 +74,7 @@ PostgreSQL live tests run only when `MAILBRIDGE_RUN_PERSISTENT_TESTS=true` and
 
 ScyllaDB live tests run only when `MAILBRIDGE_RUN_PERSISTENT_TESTS=true` and
 `MAILBRIDGE_TEST_SCYLLA_URI` are set. The keyspace must already exist.
+
+## License
+
+This project is licensed under the [MIT License](LICENSE).

@@ -325,7 +325,7 @@ impl MailQueue for SqliteQueue {
     }
 }
 
-async fn count_rows(pool: &SqlitePool, sql: &str) -> Result<usize> {
+async fn count_rows(pool: &SqlitePool, sql: &'static str) -> Result<usize> {
     let count = sqlx::query(sql)
         .fetch_one(pool)
         .await
