@@ -297,9 +297,13 @@ let client = MailClient::try_from_config(provider, &config).await?;
 SendPulse:
 
 ```sh
-MAILBRIDGE_SENDPULSE_API_KEY=sendpulse-bearer-token
+MAILBRIDGE_SENDPULSE_CLIENT_ID=sendpulse-client-id
+MAILBRIDGE_SENDPULSE_CLIENT_SECRET=sendpulse-client-secret
 MAILBRIDGE_SENDPULSE_BASE_URL=https://api.sendpulse.com
 ```
+
+For deployments that already manage SendPulse tokens externally, use
+`MAILBRIDGE_SENDPULSE_ACCESS_TOKEN` instead of client credentials.
 
 ```rust
 use mailbridge::{MailClient, MailbridgeConfig, SendPulseConfig, SendPulseProvider};

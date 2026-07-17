@@ -250,13 +250,11 @@ fn mailgun_form(message: &EmailMessage) -> Result<reqwest::multipart::Form> {
 
 #[cfg(test)]
 mod tests {
-    use std::io::{Read, Write};
-    use std::net::TcpListener;
-    use std::sync::mpsc;
     use std::time::Duration;
 
     use super::*;
     use crate::config::MailbridgeConfig;
+    use crate::provider::shared::test_support::test_server;
 
     #[test]
     fn validate_domain_rejects_path_segments() {
@@ -307,26 +305,5 @@ mod tests {
             .allowed_from_domain("example.com")
             .build()
             .expect("valid shared config")
-    }
-
-    fn test_server(response: &'static str) -> (String, mpsc::Receiver<String>) {
-        let listener = TcpListener::bind("127.0.0.1:0").expect("listener binds");
-        let address = listener.local_addr().expect("local addr");
-        let (request_tx, request_rx) = mpsc::channel();
-        std::thread::spawn(move || {
-            let (mut stream, _) = listener.accept().expect("connection accepted");
-            stream
-                .set_read_timeout(Some(Duration::from_secs(2)))
-                .expect("read timeout set");
-            let mut buffer = [0_u8; 8192];
-            let read = stream.read(&mut buffer).expect("request read");
-            let request = String::from_utf8_lossy(&buffer[..read]).to_ascii_lowercase();
-            request_tx.send(request).expect("request sent");
-            stream
-                .write_all(response.as_bytes())
-                .expect("response written");
-        });
-
-        (format!("http://{address}"), request_rx)
     }
 }

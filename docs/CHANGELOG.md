@@ -13,6 +13,8 @@ This project follows semantic versioning after the first crates.io release.
 - Added provider configuration types for SendGrid, Mailgun, and SendPulse,
   including environment-based constructors and provider-specific base URL
   overrides.
+- Added SendPulse client-credentials token acquisition with an access-token
+  fallback for externally managed tokens.
 
 ## 0.1.2
 

@@ -91,6 +91,7 @@ pub(super) fn secret_copy(secret: &SecretString) -> SecretString {
     SecretString::new(secret.expose_secret().to_owned().into_boxed_str())
 }
 
+#[cfg(any(feature = "sendgrid", feature = "mailgun"))]
 pub(super) fn secret_from_env(key: &str) -> Result<SecretString> {
     Ok(SecretString::new(required_env(key)?.into_boxed_str()))
 }
@@ -113,5 +114,42 @@ pub(super) fn provider_error(provider: &str, status: u16, message: String) -> Ma
             "{provider} temporary failure: status={status}, message={message}"
         )),
         _ => MailError::RelayRejected { status, message },
+    }
+}
+
+#[cfg(test)]
+pub(super) mod test_support {
+    use std::io::{Read, Write};
+    use std::net::TcpListener;
+    use std::sync::mpsc;
+    use std::time::Duration;
+
+    pub(crate) fn test_server(response: &'static str) -> (String, mpsc::Receiver<String>) {
+        test_server_with_responses(vec![response])
+    }
+
+    pub(crate) fn test_server_with_responses(
+        responses: Vec<&'static str>,
+    ) -> (String, mpsc::Receiver<String>) {
+        let listener = TcpListener::bind("127.0.0.1:0").expect("listener binds");
+        let address = listener.local_addr().expect("local addr");
+        let (request_tx, request_rx) = mpsc::channel();
+        std::thread::spawn(move || {
+            for response in responses {
+                let (mut stream, _) = listener.accept().expect("connection accepted");
+                stream
+                    .set_read_timeout(Some(Duration::from_secs(2)))
+                    .expect("read timeout set");
+                let mut buffer = [0_u8; 8192];
+                let read = stream.read(&mut buffer).expect("request read");
+                let request = String::from_utf8_lossy(&buffer[..read]).to_ascii_lowercase();
+                request_tx.send(request).expect("request sent");
+                stream
+                    .write_all(response.as_bytes())
+                    .expect("response written");
+            }
+        });
+
+        (format!("http://{address}"), request_rx)
     }
 }
