@@ -33,9 +33,8 @@
 //! lease timeout, replication, compaction, and dead-letter retention are tuned
 //! by the owning application.
 //!
-//! Future provider flags (`sendgrid`, `sendpulse`, and `mailgun`) expose types
-//! that fail with a configuration error until full provider implementations are
-//! added.
+//! Optional provider flags (`sendgrid`, `sendpulse`, and `mailgun`) add HTTP
+//! provider implementations for those transactional email services.
 //!
 //! Live durable-backend tests are environment gated:
 //!
@@ -80,8 +79,8 @@ pub use telemetry::{TelemetryEvent, TelemetryFields};
 #[cfg(all(feature = "hyvor-relay", feature = "api"))]
 pub use provider::HyvorRelayProvider;
 #[cfg(feature = "mailgun")]
-pub use provider::MailgunProvider;
+pub use provider::{MailgunConfig, MailgunProvider};
 #[cfg(feature = "sendgrid")]
-pub use provider::SendGridProvider;
+pub use provider::{SendGridConfig, SendGridProvider};
 #[cfg(feature = "sendpulse")]
-pub use provider::SendPulseProvider;
+pub use provider::{SendPulseConfig, SendPulseProvider};

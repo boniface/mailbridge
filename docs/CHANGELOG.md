@@ -6,7 +6,13 @@ This project follows semantic versioning after the first crates.io release.
 
 ## Unreleased
 
-No unreleased changes.
+### Added
+
+- Implemented the `sendgrid`, `mailgun`, and `sendpulse` provider feature
+  flags with opt-in HTTP sending support.
+- Added provider configuration types for SendGrid, Mailgun, and SendPulse,
+  including environment-based constructors and provider-specific base URL
+  overrides.
 
 ## 0.1.2
 

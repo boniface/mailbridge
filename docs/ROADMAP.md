@@ -41,13 +41,11 @@ Detailed implementation planning is tracked internally in `dev-docs/`.
 
 ## Future Provider Work
 
-- Implement SendGrid.
-- Implement Mailgun.
-- Implement SendPulse.
+- Expand provider examples for SendGrid, Mailgun, and SendPulse.
+- Add delivery status and webhook integrations for providers where they fit the
+  provider-neutral model.
 - Evaluate Amazon SES, Postmark, Resend, and additional relays.
 - Add richer provider capability metadata.
-- Add provider-specific webhook/status integrations where they fit the
-  provider-neutral model.
 
 ## Queue And Operations
 

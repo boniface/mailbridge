@@ -251,6 +251,65 @@ Current SMTP support is generic username/password SMTP over STARTTLS. Gmail,
 Microsoft 365, Yahoo, Yandex, OAuth/XOAUTH2, and provider-specific presets are
 planned in the roadmap.
 
+## Send With Optional HTTP Providers
+
+Enable one of the provider feature flags and build the provider from its
+configuration type:
+
+```toml
+[dependencies]
+mailbridge = { version = "0.1", features = ["sendgrid"] }
+```
+
+SendGrid:
+
+```sh
+MAILBRIDGE_SENDGRID_API_KEY=sendgrid-api-key
+MAILBRIDGE_SENDGRID_BASE_URL=https://api.sendgrid.com
+```
+
+```rust
+use mailbridge::{MailClient, MailbridgeConfig, SendGridConfig, SendGridProvider};
+
+let config = MailbridgeConfig::from_env()?;
+let provider_config = SendGridConfig::from_env(&config)?;
+let provider = SendGridProvider::from_config(&provider_config)?;
+let client = MailClient::try_from_config(provider, &config).await?;
+```
+
+Mailgun:
+
+```sh
+MAILBRIDGE_MAILGUN_API_KEY=mailgun-api-key
+MAILBRIDGE_MAILGUN_DOMAIN=mg.example.com
+MAILBRIDGE_MAILGUN_BASE_URL=https://api.mailgun.net
+```
+
+```rust
+use mailbridge::{MailClient, MailbridgeConfig, MailgunConfig, MailgunProvider};
+
+let config = MailbridgeConfig::from_env()?;
+let provider_config = MailgunConfig::from_env(&config)?;
+let provider = MailgunProvider::from_config(&provider_config)?;
+let client = MailClient::try_from_config(provider, &config).await?;
+```
+
+SendPulse:
+
+```sh
+MAILBRIDGE_SENDPULSE_API_KEY=sendpulse-bearer-token
+MAILBRIDGE_SENDPULSE_BASE_URL=https://api.sendpulse.com
+```
+
+```rust
+use mailbridge::{MailClient, MailbridgeConfig, SendPulseConfig, SendPulseProvider};
+
+let config = MailbridgeConfig::from_env()?;
+let provider_config = SendPulseConfig::from_env(&config)?;
+let provider = SendPulseProvider::from_config(&provider_config)?;
+let client = MailClient::try_from_config(provider, &config).await?;
+```
+
 ## Feature Flags
 
 Common features:
@@ -258,6 +317,9 @@ Common features:
 ```text
 api              HTTP provider support through reqwest
 hyvor-relay      Hyvor Relay provider
+sendgrid         SendGrid HTTP provider
+mailgun          Mailgun HTTP provider
+sendpulse        SendPulse SMTP API provider
 smtp             SMTP provider through lettre
 rustls           Rustls TLS backend
 native-tls       Native TLS backend

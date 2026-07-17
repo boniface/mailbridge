@@ -26,8 +26,10 @@ MailClient
 MailProvider
   |
   +-- HyvorRelayProvider
+  +-- SendGridProvider
+  +-- MailgunProvider
+  +-- SendPulseProvider
   +-- SmtpClient
-  +-- future SendGrid/Mailgun/SendPulse providers
 
 MailQueue
   |
@@ -120,7 +122,7 @@ rate-limit
 ```
 
 Optional features enable SMTP, durable queues, telemetry, dotenv loading, and
-future providers. TLS backends are mutually exclusive: `rustls` and
+additional HTTP providers. TLS backends are mutually exclusive: `rustls` and
 `native-tls` must not be enabled together.
 
 HTTP providers use `reqwest` 0.13. Mailbridge's `rustls` feature enables
@@ -224,7 +226,7 @@ Near-term extension points:
 - OAuth token-provider abstraction;
 - Gmail API provider;
 - Microsoft Graph provider;
-- SendGrid, Mailgun, and SendPulse providers.
+- additional transactional HTTP providers.
 
 Long-term extension points:
 
