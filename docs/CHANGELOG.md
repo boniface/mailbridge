@@ -6,6 +6,10 @@ This project follows semantic versioning after the first crates.io release.
 
 ## Unreleased
 
+No unreleased changes.
+
+## 0.2.0 - 2026-07-17
+
 ### Added
 
 - Implemented the `sendgrid`, `mailgun`, and `sendpulse` provider feature
@@ -15,6 +19,16 @@ This project follows semantic versioning after the first crates.io release.
   overrides.
 - Added SendPulse client-credentials token acquisition with an access-token
   fallback for externally managed tokens.
+- Implemented `resend`, `mailjet`, `brevo`, and `bird` provider feature flags.
+- Added Mailjet v3.1 and v3 send API support, including sandbox mode.
+- Added provider capability metadata through `ProviderCapabilities` and
+  `MailProvider::capabilities()`.
+- Added examples for every HTTP provider feature.
+
+### Fixed
+
+- Refreshed the lockfile to resolve the yanked transitive `spin 0.9.8`
+  package warning during crate packaging.
 
 ## 0.1.2
 

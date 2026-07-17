@@ -33,8 +33,9 @@
 //! lease timeout, replication, compaction, and dead-letter retention are tuned
 //! by the owning application.
 //!
-//! Optional provider flags (`sendgrid`, `sendpulse`, and `mailgun`) add HTTP
-//! provider implementations for those transactional email services.
+//! Optional provider flags (`sendgrid`, `sendpulse`, `mailgun`, `resend`,
+//! `mailjet`, `brevo`, and `bird`) add HTTP provider implementations for those
+//! transactional email services.
 //!
 //! Live durable-backend tests are environment gated:
 //!
@@ -59,7 +60,7 @@ pub use client::{DeliveryMode, MailClient, MailClientBuilder, MessageId, SendRec
 pub use config::{MailbridgeConfig, MailbridgeConfigBuilder, QueueBackend, SmtpConfig};
 pub use email::{Attachment, EmailAddress, EmailMessage, EmailMessageBuilder};
 pub use error::{MailError, Result};
-pub use provider::{MailProvider, SendStatus};
+pub use provider::{MailProvider, ProviderCapabilities, SendStatus};
 #[cfg(feature = "queue-postgres")]
 pub use queue::PostgresQueue;
 #[cfg(feature = "queue-scylla")]
@@ -78,8 +79,16 @@ pub use telemetry::{TelemetryEvent, TelemetryFields};
 
 #[cfg(all(feature = "hyvor-relay", feature = "api"))]
 pub use provider::HyvorRelayProvider;
+#[cfg(feature = "bird")]
+pub use provider::{BirdConfig, BirdProvider};
+#[cfg(feature = "brevo")]
+pub use provider::{BrevoConfig, BrevoProvider};
 #[cfg(feature = "mailgun")]
 pub use provider::{MailgunConfig, MailgunProvider};
+#[cfg(feature = "mailjet")]
+pub use provider::{MailjetApiVersion, MailjetConfig, MailjetProvider};
+#[cfg(feature = "resend")]
+pub use provider::{ResendConfig, ResendProvider};
 #[cfg(feature = "sendgrid")]
 pub use provider::{SendGridConfig, SendGridProvider};
 #[cfg(feature = "sendpulse")]

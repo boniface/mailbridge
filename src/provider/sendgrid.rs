@@ -16,7 +16,7 @@ use crate::provider::shared::{
     join_url, optional_env, parse_base_url, provider_error, response_text, secret_copy,
     secret_from_env,
 };
-use crate::provider::{MailProvider, SendStatus};
+use crate::provider::{MailProvider, ProviderCapabilities, SendStatus};
 
 const DEFAULT_BASE_URL: &str = "https://api.sendgrid.com";
 
@@ -166,6 +166,12 @@ impl MailProvider for SendGridProvider {
 
     fn provider_name(&self) -> &'static str {
         "sendgrid"
+    }
+
+    fn capabilities(&self) -> ProviderCapabilities {
+        ProviderCapabilities::new()
+            .with_attachments()
+            .with_custom_headers()
     }
 }
 

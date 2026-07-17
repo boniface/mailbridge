@@ -11,7 +11,7 @@ use crate::client::{MessageId, SendReceipt};
 use crate::config::MailbridgeConfig;
 use crate::email::{Attachment, EmailAddress, EmailMessage};
 use crate::error::{MailError, Result};
-use crate::provider::{MailProvider, SendStatus};
+use crate::provider::{MailProvider, ProviderCapabilities, SendStatus};
 
 type Recipients<'a> = Vec<ApiAddress<'a>>;
 
@@ -126,6 +126,13 @@ impl MailProvider for HyvorRelayProvider {
 
     fn provider_name(&self) -> &'static str {
         "hyvor-relay"
+    }
+
+    fn capabilities(&self) -> ProviderCapabilities {
+        ProviderCapabilities::new()
+            .with_status_lookup()
+            .with_attachments()
+            .with_custom_headers()
     }
 }
 

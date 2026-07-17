@@ -29,6 +29,10 @@ MailProvider
   +-- SendGridProvider
   +-- MailgunProvider
   +-- SendPulseProvider
+  +-- ResendProvider
+  +-- MailjetProvider
+  +-- BrevoProvider
+  +-- BirdProvider
   +-- SmtpClient
 
 MailQueue
@@ -230,7 +234,6 @@ Near-term extension points:
 
 Long-term extension points:
 
-- provider capability metadata;
 - richer status tracking;
 - webhook normalization;
 - additional queue backends;

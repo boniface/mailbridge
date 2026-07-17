@@ -314,6 +314,37 @@ let provider = SendPulseProvider::from_config(&provider_config)?;
 let client = MailClient::try_from_config(provider, &config).await?;
 ```
 
+Resend:
+
+```sh
+MAILBRIDGE_RESEND_API_KEY=resend-api-key
+MAILBRIDGE_RESEND_BASE_URL=https://api.resend.com
+```
+
+Mailjet:
+
+```sh
+MAILBRIDGE_MAILJET_API_KEY=mailjet-api-key
+MAILBRIDGE_MAILJET_SECRET_KEY=mailjet-secret-key
+MAILBRIDGE_MAILJET_BASE_URL=https://api.mailjet.com
+MAILBRIDGE_MAILJET_API_VERSION=v3.1
+MAILBRIDGE_MAILJET_SANDBOX_MODE=false
+```
+
+Brevo:
+
+```sh
+MAILBRIDGE_BREVO_API_KEY=brevo-api-key
+MAILBRIDGE_BREVO_BASE_URL=https://api.brevo.com
+```
+
+Bird:
+
+```sh
+MAILBRIDGE_BIRD_TOKEN=bird-token
+MAILBRIDGE_BIRD_BASE_URL=https://us1.platform.bird.com
+```
+
 ## Feature Flags
 
 Common features:
@@ -324,6 +355,10 @@ hyvor-relay      Hyvor Relay provider
 sendgrid         SendGrid HTTP provider
 mailgun          Mailgun HTTP provider
 sendpulse        SendPulse SMTP API provider
+resend           Resend HTTP provider
+mailjet          Mailjet HTTP provider with v3.1 and v3 support
+brevo            Brevo transactional email provider
+bird             Bird transactional email provider
 smtp             SMTP provider through lettre
 rustls           Rustls TLS backend
 native-tls       Native TLS backend

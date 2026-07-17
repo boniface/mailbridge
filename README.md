@@ -31,8 +31,8 @@ Provider-neutral transactional email library for Rust services.
   adapters.
 - `telemetry` emits `tracing` events without API keys, message bodies, or full
   recipient lists.
-- `sendgrid`, `sendpulse`, and `mailgun` enable opt-in HTTP providers for
-  those transactional email services.
+- `sendgrid`, `sendpulse`, `mailgun`, `resend`, `mailjet`, `brevo`, and
+  `bird` enable opt-in HTTP providers for those transactional email services.
 
 ## Queue Backends
 

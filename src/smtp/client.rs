@@ -24,7 +24,7 @@ use crate::email::{Attachment, EmailAddress, EmailMessage};
 #[cfg(feature = "smtp")]
 use crate::error::{MailError, Result};
 #[cfg(feature = "smtp")]
-use crate::provider::{MailProvider, SendStatus};
+use crate::provider::{MailProvider, ProviderCapabilities, SendStatus};
 
 #[cfg(feature = "smtp")]
 #[derive(Debug, Clone)]
@@ -91,6 +91,10 @@ impl MailProvider for SmtpClient {
 
     fn provider_name(&self) -> &'static str {
         "smtp"
+    }
+
+    fn capabilities(&self) -> ProviderCapabilities {
+        ProviderCapabilities::new().with_attachments()
     }
 }
 

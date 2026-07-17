@@ -1,6 +1,6 @@
 [package]
 name = "mailbridge"
-version = "0.1.2"
+version = "0.2.0"
 edition = "2024"
 rust-version = "1.94"
 license = "MIT"
@@ -37,6 +37,10 @@ features = [
     "sendgrid",
     "sendpulse",
     "mailgun",
+    "mailjet",
+    "bird",
+    "resend",
+    "brevo",
     "dotenv",
 ]
 
@@ -48,6 +52,10 @@ hyvor-relay = []
 sendgrid = ["api"]
 sendpulse = ["api"]
 mailgun = ["api", "reqwest/multipart"]
+mailjet = ["api"]
+bird = ["api"]
+resend = ["api"]
+brevo = ["api"]
 rustls = ["reqwest/rustls"]
 native-tls = ["reqwest/native-tls"]
 queue-memory = []
@@ -88,3 +96,35 @@ required-features = ["hyvor-relay", "api"]
 [[example]]
 name = "queue_worker"
 required-features = ["hyvor-relay", "api", "queue-memory"]
+
+[[example]]
+name = "send_sendgrid"
+required-features = ["sendgrid"]
+
+[[example]]
+name = "send_mailgun"
+required-features = ["mailgun"]
+
+[[example]]
+name = "send_sendpulse"
+required-features = ["sendpulse"]
+
+[[example]]
+name = "send_resend"
+required-features = ["resend"]
+
+[[example]]
+name = "send_mailjet_sandbox"
+required-features = ["mailjet"]
+
+[[example]]
+name = "send_mailjet_v3"
+required-features = ["mailjet"]
+
+[[example]]
+name = "send_brevo"
+required-features = ["brevo"]
+
+[[example]]
+name = "send_bird"
+required-features = ["bird"]

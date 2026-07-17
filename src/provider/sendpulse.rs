@@ -17,7 +17,7 @@ use crate::provider::shared::{
     join_url, optional_env, parse_base_url, provider_error, required_env, response_text,
     secret_copy, validate_secret,
 };
-use crate::provider::{MailProvider, SendStatus};
+use crate::provider::{MailProvider, ProviderCapabilities, SendStatus};
 
 const DEFAULT_BASE_URL: &str = "https://api.sendpulse.com";
 
@@ -252,6 +252,12 @@ impl MailProvider for SendPulseProvider {
 
     fn provider_name(&self) -> &'static str {
         "sendpulse"
+    }
+
+    fn capabilities(&self) -> ProviderCapabilities {
+        ProviderCapabilities::new()
+            .with_attachments()
+            .with_custom_headers()
     }
 }
 

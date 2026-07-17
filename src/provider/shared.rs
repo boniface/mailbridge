@@ -9,13 +9,21 @@ use crate::error::{MailError, Result};
 #[cfg(any(feature = "sendgrid", feature = "sendpulse"))]
 use std::borrow::Cow;
 
-#[cfg(any(feature = "sendgrid", feature = "sendpulse"))]
+#[cfg(any(
+    feature = "sendgrid",
+    feature = "sendpulse",
+    feature = "resend",
+    feature = "mailjet",
+    feature = "brevo"
+))]
 use base64::Engine;
 #[cfg(any(feature = "sendgrid", feature = "sendpulse"))]
 use serde::Serialize;
 
 #[cfg(any(feature = "sendgrid", feature = "sendpulse"))]
-use crate::email::{Attachment, EmailAddress};
+use crate::email::Attachment;
+#[cfg(any(feature = "sendgrid", feature = "sendpulse"))]
+use crate::email::EmailAddress;
 
 #[cfg(any(feature = "sendgrid", feature = "sendpulse"))]
 #[derive(Debug, Clone, PartialEq, Serialize)]
@@ -43,6 +51,11 @@ pub(super) fn addresses(addresses: &[EmailAddress]) -> Vec<ApiAddress<'_>> {
 #[cfg(any(feature = "sendgrid", feature = "sendpulse"))]
 pub(super) fn attachment_content_base64(attachment: &Attachment) -> String {
     base64::engine::general_purpose::STANDARD.encode(attachment.content())
+}
+
+#[cfg(any(feature = "resend", feature = "mailjet", feature = "brevo"))]
+pub(super) fn bytes_base64(bytes: &[u8]) -> String {
+    base64::engine::general_purpose::STANDARD.encode(bytes)
 }
 
 pub(super) fn validate_secret(value: &str, provider: &str) -> Result<()> {
@@ -91,7 +104,14 @@ pub(super) fn secret_copy(secret: &SecretString) -> SecretString {
     SecretString::new(secret.expose_secret().to_owned().into_boxed_str())
 }
 
-#[cfg(any(feature = "sendgrid", feature = "mailgun"))]
+#[cfg(any(
+    feature = "sendgrid",
+    feature = "mailgun",
+    feature = "resend",
+    feature = "mailjet",
+    feature = "brevo",
+    feature = "bird"
+))]
 pub(super) fn secret_from_env(key: &str) -> Result<SecretString> {
     Ok(SecretString::new(required_env(key)?.into_boxed_str()))
 }
