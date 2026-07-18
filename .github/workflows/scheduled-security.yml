@@ -10,7 +10,7 @@ permissions:
 
 env:
   CARGO_TERM_COLOR: always
-  COMPREHENSIVE_FEATURES: hyvor-relay,api,rustls,queue-memory,rate-limit,smtp,telemetry,queue-sqlite,queue-postgres,queue-scylla,sendgrid,sendpulse,mailgun,dotenv,test-utils
+  COMPREHENSIVE_FEATURES: hyvor-relay,api,rustls,queue-memory,rate-limit,smtp,telemetry,queue-sqlite,queue-postgres,queue-scylla,sendgrid,sendpulse,mailgun,resend,mailjet,brevo,bird,dotenv,test-utils
 
 jobs:
   audit-and-deny:
@@ -36,7 +36,7 @@ jobs:
       - name: Check public API compatibility
         run: |
           if curl -fsSL https://index.crates.io/ma/il/mailbridge >/dev/null; then
-            cargo semver-checks check-release
+            cargo semver-checks check-release --default-features
           else
             echo "mailbridge is not published on crates.io yet; skipping semver baseline check."
           fi

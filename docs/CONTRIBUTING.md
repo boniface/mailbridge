@@ -21,10 +21,10 @@ Recommended local checks:
 cargo fmt --all -- --check
 cargo test
 cargo test --no-default-features
-cargo test --no-default-features --features hyvor-relay,api,rustls,queue-memory,rate-limit,smtp,telemetry,queue-sqlite,queue-postgres,queue-scylla,sendgrid,sendpulse,mailgun,dotenv,test-utils
+cargo test --no-default-features --features hyvor-relay,api,rustls,queue-memory,rate-limit,smtp,telemetry,queue-sqlite,queue-postgres,queue-scylla,sendgrid,sendpulse,mailgun,resend,mailjet,brevo,bird,dotenv,test-utils
 cargo clippy -- -D warnings
-cargo clippy --no-default-features --features hyvor-relay,api,rustls,queue-memory,rate-limit,smtp,telemetry,queue-sqlite,queue-postgres,queue-scylla,sendgrid,sendpulse,mailgun,dotenv,test-utils -- -D warnings
-cargo doc --no-deps --no-default-features --features hyvor-relay,api,rustls,queue-memory,rate-limit,smtp,telemetry,queue-sqlite,queue-postgres,queue-scylla,sendgrid,sendpulse,mailgun,dotenv
+cargo clippy --no-default-features --features hyvor-relay,api,rustls,queue-memory,rate-limit,smtp,telemetry,queue-sqlite,queue-postgres,queue-scylla,sendgrid,sendpulse,mailgun,resend,mailjet,brevo,bird,dotenv,test-utils -- -D warnings
+cargo doc --no-deps --no-default-features --features hyvor-relay,api,rustls,queue-memory,rate-limit,smtp,telemetry,queue-sqlite,queue-postgres,queue-scylla,sendgrid,sendpulse,mailgun,resend,mailjet,brevo,bird,dotenv
 cargo publish --dry-run
 ```
 

@@ -8,6 +8,19 @@ This project follows semantic versioning after the first crates.io release.
 
 No unreleased changes.
 
+## 0.2.1 - 2026-07-17
+
+### Fixed
+
+- Refreshed `anyhow` to resolve `RUSTSEC-2026-0190` in scheduled security
+  checks.
+- Refreshed `quinn-proto` to resolve `RUSTSEC-2026-0185` from the transitive
+  `reqwest` dependency graph.
+- Updated scheduled security and CI feature matrices to include every
+  `0.2.x` provider feature.
+- Constrained scheduled semver checks to Mailbridge's default feature set so
+  mutually-exclusive TLS features are not enabled together.
+
 ## 0.2.0 - 2026-07-17
 
 ### Added
