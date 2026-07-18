@@ -2,12 +2,15 @@
 
 ## Purpose
 
-Mailbridge is a provider-neutral transactional email library for Rust services.
-Applications should depend on Mailbridge's core email, queue, error, and client
-types instead of provider-specific SDK models.
+Mailbridge is the email delivery boundary for Rust services. Applications build
+and validate one provider-neutral `EmailMessage`, then send immediately or
+enqueue for retry through a configured `MailProvider`.
 
-The design goal is to make the common sending path simple while keeping
-provider-specific behavior isolated and feature-gated.
+The design goal is to keep product code independent from provider SDKs,
+provider-specific request shapes, and delivery infrastructure choices. Provider
+integrations, queue backends, telemetry, rate limiting, and TLS choices stay
+isolated behind feature flags so applications can enable only the pieces they
+need.
 
 ## High-Level Flow
 

@@ -1,7 +1,9 @@
 # Usage Guide
 
-This guide covers the current public Mailbridge API for sending transactional
-email from Rust services.
+This guide covers the public Mailbridge API for sending transactional email
+from Rust services. Mailbridge gives applications one typed sending surface
+while provider-specific HTTP, SMTP, authentication, queueing, retry, and
+rate-limit details stay isolated behind feature flags.
 
 ## Install
 

@@ -1,4 +1,4 @@
-# mailbridge
+# Mailbridge
 
 [![CI](https://github.com/boniface/mailbridge/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/boniface/mailbridge/actions/workflows/ci.yml)
 [![Scheduled Security](https://github.com/boniface/mailbridge/actions/workflows/scheduled-security.yml/badge.svg?branch=main)](https://github.com/boniface/mailbridge/actions/workflows/scheduled-security.yml)
@@ -10,7 +10,22 @@
 [![Rust Edition](https://img.shields.io/badge/edition-2024-blue.svg)](https://doc.rust-lang.org/edition-guide/rust-2024/)
 [![Dependencies](https://deps.rs/repo/github/boniface/mailbridge/status.svg)](https://deps.rs/repo/github/boniface/mailbridge)
 
-Provider-neutral transactional email library for Rust services.
+Mailbridge is a Rust library for sending application email without tying your
+code to one provider's SDK or request model. It gives services one typed API
+for building, validating, sending, queueing, retrying, and rate-limiting
+transactional email while keeping provider-specific behavior behind opt-in
+feature flags.
+
+Use it when your application needs to send operational email such as
+verifications, password resets, receipts, alerts, invitations, and product
+notifications through Hyvor Relay, SendGrid, Mailgun, SendPulse, Resend,
+Mailjet, Brevo, Bird, or SMTP. The goal is to make provider switching and local
+testing practical without leaking API keys, message bodies, or provider SDK
+types through the rest of your codebase.
+
+Mailbridge is not a marketing automation platform, campaign manager, template
+designer, or address-book system. It focuses on the reliable delivery path that
+Rust services need at runtime.
 
 ## Documentation
 
