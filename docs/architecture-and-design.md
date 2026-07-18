@@ -11,36 +11,31 @@ provider-specific behavior isolated and feature-gated.
 
 ## High-Level Flow
 
-```text
-Application
-  |
-  v
-MailClient
-  |
-  +-- validates EmailMessage
-  +-- validates sender domain
-  +-- applies rate limiting
-  +-- sends immediately through MailProvider
-  +-- or enqueues through MailQueue
+```mermaid
+%%{init: {"flowchart": {"curve": "stepAfter"}} }%%
+flowchart LR
+    app[Application] --> client[MailClient]
+    client --> checks[Validation and rate limits]
+    checks --> mode{Delivery mode}
+    mode -->|Immediate| provider[MailProvider]
+    mode -->|Queued| queue[MailQueue]
+    queue --> worker[QueueWorker]
+    worker --> provider
 
-MailProvider
-  |
-  +-- HyvorRelayProvider
-  +-- SendGridProvider
-  +-- MailgunProvider
-  +-- SendPulseProvider
-  +-- ResendProvider
-  +-- MailjetProvider
-  +-- BrevoProvider
-  +-- BirdProvider
-  +-- SmtpClient
+    subgraph providers[Provider Implementations]
+        direction TB
+        hyvor[Hyvor Relay]
+        sendgrid[SendGrid]
+        mailgun[Mailgun]
+        sendpulse[SendPulse]
+        resend[Resend]
+        mailjet[Mailjet]
+        brevo[Brevo]
+        bird[Bird]
+        smtp[SMTP]
+    end
 
-MailQueue
-  |
-  +-- MemoryQueue
-  +-- SqliteQueue
-  +-- PostgresQueue
-  +-- ScyllaQueue
+    provider --> providers
 ```
 
 ## Module Boundaries
@@ -81,10 +76,46 @@ Design rules:
 
 `MailProvider` is the provider abstraction:
 
-```text
-send(&EmailMessage) -> Result<SendReceipt>
-get_status(&MessageId) -> Result<Option<SendStatus>>
-provider_name() -> &'static str
+```rust
+#[async_trait]
+pub trait MailProvider: Send + Sync {
+    async fn send(&self, message: &EmailMessage) -> Result<SendReceipt>;
+    async fn get_status(&self, id: &MessageId) -> Result<Option<SendStatus>>;
+    fn provider_name(&self) -> &'static str;
+    fn capabilities(&self) -> ProviderCapabilities;
+}
+```
+
+The concrete provider implementations use this shape:
+
+```mermaid
+%%{init: {"flowchart": {"curve": "stepAfter"}} }%%
+flowchart LR
+    trait["MailProvider trait"]
+
+    subgraph methods[Required API]
+        direction TB
+        send["send(message)"]
+        status["get_status(id)"]
+        name["provider_name()"]
+        capabilities["capabilities()"]
+    end
+
+    subgraph implementations[Implementations]
+        direction TB
+        hyvor[HyvorRelayProvider]
+        sendgrid[SendGridProvider]
+        mailgun[MailgunProvider]
+        sendpulse[SendPulseProvider]
+        resend[ResendProvider]
+        mailjet[MailjetProvider]
+        brevo[BrevoProvider]
+        bird[BirdProvider]
+        smtp[SmtpClient]
+    end
+
+    trait --> methods
+    trait --> implementations
 ```
 
 Provider implementations own protocol mapping, auth, response parsing, and
@@ -117,13 +148,11 @@ profiles differ.
 
 Default features target the common HTTP-relay path:
 
-```text
-hyvor-relay
-api
-rustls
-queue-memory
-rate-limit
-```
+- `hyvor-relay`
+- `api`
+- `rustls`
+- `queue-memory`
+- `rate-limit`
 
 Optional features enable SMTP, durable queues, telemetry, dotenv loading, and
 additional HTTP providers. TLS backends are mutually exclusive: `rustls` and
@@ -159,11 +188,17 @@ Provider modules should not:
 
 The queue abstraction is intentionally small. It supports:
 
-- enqueueing validated messages;
-- reserving due work;
-- releasing messages for retry;
-- marking messages as sent;
-- dead-lettering permanently failed messages.
+```mermaid
+%%{init: {"flowchart": {"curve": "stepAfter"}} }%%
+flowchart LR
+    start([Start]) -->|enqueue validated message| queued[Queued]
+    queued -->|reserve due work| reserved[Reserved]
+    reserved -->|provider send succeeds| sent[Sent]
+    reserved -->|retryable failure| queued
+    reserved -->|permanent failure or retry exhaustion| dead[DeadLettered]
+    sent --> done([Done])
+    dead --> done
+```
 
 Backend notes:
 

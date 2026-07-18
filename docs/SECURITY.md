@@ -6,9 +6,9 @@ are taken seriously.
 
 ## Supported Versions
 
-Until the first public release, only the `main` branch is supported. After
-crates.io publication, security fixes will target the latest released minor
-version unless a broader fix is practical.
+Security fixes target the latest released minor version unless a broader fix is
+practical. The `main` branch carries unreleased fixes until the next release is
+published.
 
 ## Reporting A Vulnerability
 

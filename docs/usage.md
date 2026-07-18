@@ -7,7 +7,7 @@ email from Rust services.
 
 ```toml
 [dependencies]
-mailbridge = "0.1"
+mailbridge = "0.2"
 ```
 
 Default features enable:
@@ -21,14 +21,14 @@ For SMTP:
 
 ```toml
 [dependencies]
-mailbridge = { version = "0.1", features = ["smtp"] }
+mailbridge = { version = "0.2", features = ["smtp"] }
 ```
 
 For durable queues:
 
 ```toml
 [dependencies]
-mailbridge = { version = "0.1", features = ["queue-sqlite"] }
+mailbridge = { version = "0.2", features = ["queue-sqlite"] }
 ```
 
 Use only the queue backend features your application needs.
@@ -214,7 +214,7 @@ Enable the `smtp` feature and provide SMTP configuration:
 
 ```toml
 [dependencies]
-mailbridge = { version = "0.1", features = ["smtp"] }
+mailbridge = { version = "0.2", features = ["smtp"] }
 ```
 
 ```sh
@@ -258,7 +258,7 @@ configuration type:
 
 ```toml
 [dependencies]
-mailbridge = { version = "0.1", features = ["sendgrid"] }
+mailbridge = { version = "0.2", features = ["sendgrid"] }
 ```
 
 SendGrid:
@@ -349,27 +349,27 @@ MAILBRIDGE_BIRD_BASE_URL=https://us1.platform.bird.com
 
 Common features:
 
-```text
-api              HTTP provider support through reqwest
-hyvor-relay      Hyvor Relay provider
-sendgrid         SendGrid HTTP provider
-mailgun          Mailgun HTTP provider
-sendpulse        SendPulse SMTP API provider
-resend           Resend HTTP provider
-mailjet          Mailjet HTTP provider with v3.1 and v3 support
-brevo            Brevo transactional email provider
-bird             Bird transactional email provider
-smtp             SMTP provider through lettre
-rustls           Rustls TLS backend
-native-tls       Native TLS backend
-queue-memory     in-memory queue
-queue-sqlite     SQLite queue backend
-queue-postgres   PostgreSQL queue backend
-queue-scylla     ScyllaDB queue backend
-rate-limit       local rate limiting
-telemetry        tracing events
-dotenv           load .env before reading RELAY_* variables
-```
+| Feature | Purpose |
+| --- | --- |
+| `api` | HTTP provider support through reqwest |
+| `hyvor-relay` | Hyvor Relay provider |
+| `sendgrid` | SendGrid HTTP provider |
+| `mailgun` | Mailgun HTTP provider |
+| `sendpulse` | SendPulse SMTP API provider |
+| `resend` | Resend HTTP provider |
+| `mailjet` | Mailjet HTTP provider with v3.1 and v3 support |
+| `brevo` | Brevo transactional email provider |
+| `bird` | Bird transactional email provider |
+| `smtp` | SMTP provider through lettre |
+| `rustls` | Rustls TLS backend |
+| `native-tls` | Native TLS backend |
+| `queue-memory` | In-memory queue |
+| `queue-sqlite` | SQLite queue backend |
+| `queue-postgres` | PostgreSQL queue backend |
+| `queue-scylla` | ScyllaDB queue backend |
+| `rate-limit` | Local rate limiting |
+| `telemetry` | Tracing events |
+| `dotenv` | Load `.env` before reading `RELAY_*` variables |
 
 `rustls` and `native-tls` are mutually exclusive.
 

@@ -4,7 +4,7 @@ This roadmap describes intended direction, not a guarantee of delivery order.
 Provider APIs and hosted email policies can change, so each release should
 reconfirm external provider behavior before implementation.
 
-## 0.1.x: Stabilize The First Public Release
+## Delivered In 0.1.x: Stabilize The First Public Release
 
 - Publish the initial crate to crates.io.
 - Keep the Hyvor Relay provider and provider-neutral API stable.
@@ -12,7 +12,7 @@ reconfirm external provider behavior before implementation.
 - Keep CI, release, audit, and publish dry-run checks green.
 - Avoid breaking changes unless they fix a release-blocking problem.
 
-## 0.2.0: Transactional Provider Expansion
+## Delivered In 0.2.0: Transactional Provider Expansion
 
 - Implement SendGrid, Mailgun, and SendPulse provider feature flags.
 - Add Resend, Mailjet, Brevo, and Bird transactional providers.
