@@ -23,7 +23,23 @@ reconfirm external provider behavior before implementation.
 - Add examples for every HTTP provider.
 - Add provider capability metadata through `ProviderCapabilities`.
 
-## 0.3.0: SMTP Foundation And Mailbox Presets
+## 0.3.0: OpenTelemetry-Friendly Observability
+
+- Keep Mailbridge instrumentation based on `tracing` so applications can bridge
+  logs and spans into OpenTelemetry.
+- Document application-owned OpenTelemetry setup for Mailbridge telemetry.
+- Add stable event, span, and attribute naming for send, provider, queue,
+  retry, dead-letter, and rate-limit operations.
+- Improve safe failure classification fields without logging secrets, message
+  bodies, attachment content, or full recipient lists.
+- Add an OpenTelemetry example that shows how a consuming application exports
+  Mailbridge telemetry.
+- Evaluate whether metrics should use OpenTelemetry directly or a metrics
+  facade behind a separate opt-in feature.
+
+
+
+## 0.4.0: SMTP Foundation And Mailbox Presets
 
 - Strengthen the generic SMTP provider.
 - Add typed SMTP transport configuration.
@@ -35,14 +51,14 @@ reconfirm external provider behavior before implementation.
 
 Detailed implementation planning is tracked internally in `dev-docs/`.
 
-## 0.4.0: OAuth For Mailbox Sending
+## 0.5.0: OAuth For Mailbox Sending
 
 - Add an `AccessTokenProvider` abstraction.
 - Add SMTP XOAUTH2 support where provider support is practical.
 - Add OAuth-focused examples for Google and Microsoft accounts.
 - Keep refresh-token storage outside Mailbridge.
 
-## 0.5.0: Mailbox HTTP API Providers
+## 0.6.0: Mailbox HTTP API Providers
 
 - Add Gmail API `users.messages.send` provider.
 - Add Microsoft Graph `sendMail` provider.
