@@ -40,6 +40,34 @@ impl MailError {
             | Self::Queue(_) => false,
         }
     }
+
+    #[must_use]
+    pub const fn telemetry_kind(&self) -> &'static str {
+        match self {
+            Self::Config(_) => "config",
+            Self::Validation(_) => "validation",
+            Self::SenderDomainNotAllowed { .. } => "sender_domain_not_allowed",
+            Self::RateLimited => "rate_limited",
+            Self::Authentication => "authentication",
+            Self::RelayRejected { .. } => "provider_rejected",
+            Self::Temporary(_) => "temporary",
+            Self::Queue(_) => "queue",
+        }
+    }
+
+    #[must_use]
+    pub const fn status_code(&self) -> Option<u16> {
+        match self {
+            Self::RelayRejected { status, .. } => Some(*status),
+            Self::Config(_)
+            | Self::Validation(_)
+            | Self::SenderDomainNotAllowed { .. }
+            | Self::RateLimited
+            | Self::Authentication
+            | Self::Temporary(_)
+            | Self::Queue(_) => None,
+        }
+    }
 }
 
 #[cfg(test)]
@@ -58,5 +86,23 @@ mod tests {
         let error = MailError::Validation("missing body".to_owned());
 
         assert!(!error.is_retryable());
+    }
+
+    #[test]
+    fn telemetry_kind_classifies_errors_without_raw_message() {
+        let error = MailError::Temporary("provider included private payload".to_owned());
+
+        assert_eq!(error.telemetry_kind(), "temporary");
+    }
+
+    #[test]
+    fn status_code_is_exposed_only_for_provider_rejections() {
+        let error = MailError::RelayRejected {
+            status: 429,
+            message: "too many requests".to_owned(),
+        };
+
+        assert_eq!(error.status_code(), Some(429));
+        assert_eq!(MailError::Authentication.status_code(), None);
     }
 }

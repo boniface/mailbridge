@@ -161,6 +161,10 @@ impl MailQueue for SqliteQueue {
         self
     }
 
+    fn backend_name(&self) -> &'static str {
+        "sqlite"
+    }
+
     async fn enqueue(&self, item: QueueItem) -> Result<QueueId> {
         let id = QueueId::new_uuid();
         let message = item.into_message();

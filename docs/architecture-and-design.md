@@ -1,5 +1,7 @@
 # Architecture And Design
 
+[README](../README.md) | [Usage](usage.md) | [Architecture](architecture-and-design.md) | [Telemetry](telemetry.md) | [Roadmap](ROADMAP.md) | [Changelog](CHANGELOG.md)
+
 ## Purpose
 
 Mailbridge is the email delivery boundary for Rust services. Applications build
@@ -229,26 +231,58 @@ Expected classifications:
 
 ## Telemetry Design
 
-Telemetry is optional and must be safe by default.
+Telemetry is optional and enabled with the `telemetry` feature. Mailbridge uses
+`tracing` as its library instrumentation surface and does not configure global
+subscribers, OpenTelemetry SDKs, collectors, exporters, sampling, or resource
+attributes. Those choices belong to the application.
+
+The telemetry model has two layers:
+
+```mermaid
+%%{init: {"flowchart": {"curve": "stepAfter"}} }%%
+flowchart TB
+    app[Application span or worker span] --> send[mailbridge.send]
+    send --> provider[mailbridge.provider.send]
+    app --> enqueue[mailbridge.queue.enqueue]
+    app --> reserve[mailbridge.queue.reserve]
+    reserve --> process[mailbridge.queue.process]
+    process --> retry[mailbridge.queue.retry]
+    process --> dead[mailbridge.queue.dead_letter]
+```
+
+Events use the `mailbridge.*` namespace for operational outcomes. Attributes
+use stable `mailbridge_*` field names so JSON logs, tracing subscribers, and
+OpenTelemetry bridges can process the same data consistently.
 
 Allowed fields:
 
 - provider name;
 - event type;
+- sender domain;
+- delivery mode;
 - retryable classification;
 - queue backend;
-- counts;
-- low-cardinality status labels.
+- retry attempt count;
+- provider status code;
+- elapsed milliseconds;
+- stable error category.
 
 Disallowed fields:
 
 - API keys;
 - SMTP passwords;
 - OAuth tokens;
-- message bodies;
-- attachment content;
-- full recipient lists;
+- full sender or recipient email addresses;
+- message subject, text, or HTML body;
+- attachment names or content;
+- raw provider response bodies;
+- arbitrary email headers;
 - private mailbox data.
+
+Metrics are intentionally not a first-class API in 0.3.0. Applications can
+derive counters and latency views from Mailbridge spans and events. A future
+metrics feature should remain opt-in and avoid exporter dependencies in the
+default build.
 
 ## Security Design
 

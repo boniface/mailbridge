@@ -31,6 +31,7 @@ Rust services need at runtime.
 
 - [Usage guide](docs/usage.md)
 - [Architecture and design](docs/architecture-and-design.md)
+- [Telemetry guide](docs/telemetry.md)
 - [Roadmap](docs/ROADMAP.md)
 - [Changelog](docs/CHANGELOG.md)
 - [Contributing](docs/CONTRIBUTING.md)
@@ -44,8 +45,8 @@ Rust services need at runtime.
 - `smtp` enables SMTP submission through `lettre`.
 - `queue-sqlite`, `queue-postgres`, and `queue-scylla` enable durable queue
   adapters.
-- `telemetry` emits `tracing` events without API keys, message bodies, or full
-  recipient lists.
+- `telemetry` emits `tracing` events and spans without API keys, message
+  bodies, or full recipient lists.
 - `sendgrid`, `sendpulse`, `mailgun`, `resend`, `mailjet`, `brevo`, and
   `bird` enable opt-in HTTP providers for those transactional email services.
 

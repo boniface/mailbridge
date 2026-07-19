@@ -1,5 +1,7 @@
 # Roadmap
 
+[README](../README.md) | [Usage](usage.md) | [Architecture](architecture-and-design.md) | [Telemetry](telemetry.md) | [Roadmap](ROADMAP.md) | [Changelog](CHANGELOG.md)
+
 This roadmap describes intended direction, not a guarantee of delivery order.
 Provider APIs and hosted email policies can change, so each release should
 reconfirm external provider behavior before implementation.
@@ -23,7 +25,7 @@ reconfirm external provider behavior before implementation.
 - Add examples for every HTTP provider.
 - Add provider capability metadata through `ProviderCapabilities`.
 
-## 0.3.0: OpenTelemetry-Friendly Observability
+## Delivered In 0.3.0: OpenTelemetry-Friendly Observability
 
 - Keep Mailbridge instrumentation based on `tracing` so applications can bridge
   logs and spans into OpenTelemetry.
@@ -36,8 +38,6 @@ reconfirm external provider behavior before implementation.
   Mailbridge telemetry.
 - Evaluate whether metrics should use OpenTelemetry directly or a metrics
   facade behind a separate opt-in feature.
-
-
 
 ## 0.4.0: SMTP Foundation And Mailbox Presets
 

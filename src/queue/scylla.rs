@@ -342,6 +342,10 @@ impl MailQueue for ScyllaQueue {
         self
     }
 
+    fn backend_name(&self) -> &'static str {
+        "scylla"
+    }
+
     async fn enqueue(&self, item: QueueItem) -> Result<QueueId> {
         let id = QueueId::new_uuid();
         let bucket = bucket_for(id.as_str(), self.bucket_count);

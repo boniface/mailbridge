@@ -114,6 +114,10 @@ impl QueuedEmail {
 #[async_trait]
 pub trait MailQueue: Send + Sync {
     fn as_any(&self) -> &dyn Any;
+    fn backend_name(&self) -> &'static str {
+        "custom"
+    }
+
     async fn enqueue(&self, item: QueueItem) -> Result<QueueId>;
     async fn reserve_batch(&self, worker_id: &str, limit: u32) -> Result<Vec<QueuedEmail>>;
     async fn mark_sent(&self, id: &QueueId, receipt: &SendReceipt) -> Result<()>;
@@ -251,6 +255,11 @@ impl QueueHandle {
     pub fn is_memory(&self) -> bool {
         self.inner.as_any().is::<MemoryQueue>()
     }
+
+    #[must_use]
+    pub fn backend_name(&self) -> &'static str {
+        self.inner.backend_name()
+    }
 }
 
 #[cfg(feature = "queue-postgres")]
@@ -268,6 +277,10 @@ impl Default for QueueHandle {
 impl MailQueue for QueueHandle {
     fn as_any(&self) -> &dyn Any {
         self.inner.as_any()
+    }
+
+    fn backend_name(&self) -> &'static str {
+        self.inner.backend_name()
     }
 
     async fn enqueue(&self, item: QueueItem) -> Result<QueueId> {
@@ -323,6 +336,10 @@ impl MemoryQueue {
 impl MailQueue for MemoryQueue {
     fn as_any(&self) -> &dyn Any {
         self
+    }
+
+    fn backend_name(&self) -> &'static str {
+        "memory"
     }
 
     async fn enqueue(&self, item: QueueItem) -> Result<QueueId> {

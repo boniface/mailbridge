@@ -1,5 +1,7 @@
 # Security Policy
 
+[README](../README.md) | [Usage](usage.md) | [Architecture](architecture-and-design.md) | [Telemetry](telemetry.md) | [Roadmap](ROADMAP.md) | [Changelog](CHANGELOG.md)
+
 Mailbridge handles email credentials, API keys, OAuth tokens, recipient
 addresses, message bodies, and attachment content. Security fixes and reports
 are taken seriously.

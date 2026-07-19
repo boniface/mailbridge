@@ -13,6 +13,8 @@ use crate::telemetry::{TelemetryEvent, TelemetryFields, emit};
 
 #[cfg(feature = "rate-limit")]
 use crate::rate_limit::MailRateLimiter;
+#[cfg(feature = "telemetry")]
+use tracing::Instrument;
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct MessageId(String);
@@ -73,6 +75,16 @@ pub enum DeliveryMode {
     #[default]
     SendNow,
     Queue,
+}
+
+impl DeliveryMode {
+    #[must_use]
+    pub const fn as_str(self) -> &'static str {
+        match self {
+            Self::SendNow => "send_now",
+            Self::Queue => "queue",
+        }
+    }
 }
 
 #[derive(Debug)]
@@ -215,31 +227,24 @@ where
     ///
     /// Returns validation, rate-limit, provider, or transport errors.
     pub async fn send(&self, message: EmailMessage) -> Result<SendReceipt> {
-        self.validate(&message)?;
-        self.wait_for_rate_limit(&message).await;
+        #[cfg(feature = "telemetry")]
+        {
+            let provider = self.provider.provider_name();
+            let sender_domain = message.from_address().domain().to_owned();
 
-        let started = Instant::now();
-        emit(
-            TelemetryEvent::SendStarted,
-            &TelemetryFields::new()
-                .domain(message.from_address().domain())
-                .provider(self.provider.provider_name()),
-        );
-        let result = self.provider.send(&message).await;
+            return self
+                .send_with_rate_limit(message, RateLimitAction::Wait, DeliveryMode::SendNow)
+                .instrument(crate::telemetry::send_span(
+                    provider,
+                    &sender_domain,
+                    DeliveryMode::SendNow.as_str(),
+                ))
+                .await;
+        }
 
-        emit(
-            if result.is_ok() {
-                TelemetryEvent::SendAccepted
-            } else {
-                TelemetryEvent::SendFailed
-            },
-            &TelemetryFields::new()
-                .domain(message.from_address().domain())
-                .provider(self.provider.provider_name())
-                .elapsed_ms(started.elapsed().as_millis()),
-        );
-
-        result
+        #[cfg(not(feature = "telemetry"))]
+        self.send_with_rate_limit(message, RateLimitAction::Wait, DeliveryMode::SendNow)
+            .await
     }
 
     /// Sends a validated message without waiting for rate-limit capacity.
@@ -248,38 +253,24 @@ where
     ///
     /// Returns validation, rate-limit, provider, or transport errors.
     pub async fn try_send(&self, message: EmailMessage) -> Result<SendReceipt> {
-        self.validate(&message)?;
-        if let Err(error) = self.check_rate_limit(&message) {
-            emit(
-                TelemetryEvent::RateLimited,
-                &TelemetryFields::new()
-                    .domain(message.from_address().domain())
-                    .provider(self.provider.provider_name()),
-            );
-            return Err(error);
+        #[cfg(feature = "telemetry")]
+        {
+            let provider = self.provider.provider_name();
+            let sender_domain = message.from_address().domain().to_owned();
+
+            return self
+                .send_with_rate_limit(message, RateLimitAction::Check, DeliveryMode::SendNow)
+                .instrument(crate::telemetry::send_span(
+                    provider,
+                    &sender_domain,
+                    DeliveryMode::SendNow.as_str(),
+                ))
+                .await;
         }
 
-        let started = Instant::now();
-        emit(
-            TelemetryEvent::SendStarted,
-            &TelemetryFields::new()
-                .domain(message.from_address().domain())
-                .provider(self.provider.provider_name()),
-        );
-        let result = self.provider.send(&message).await;
-        emit(
-            if result.is_ok() {
-                TelemetryEvent::SendAccepted
-            } else {
-                TelemetryEvent::SendFailed
-            },
-            &TelemetryFields::new()
-                .domain(message.from_address().domain())
-                .provider(self.provider.provider_name())
-                .elapsed_ms(started.elapsed().as_millis()),
-        );
-
-        result
+        #[cfg(not(feature = "telemetry"))]
+        self.send_with_rate_limit(message, RateLimitAction::Check, DeliveryMode::SendNow)
+            .await
     }
 
     /// Enqueues a validated message on the configured queue.
@@ -296,13 +287,154 @@ where
             .as_ref()
             .ok_or_else(|| MailError::Queue("mail queue is not configured".to_owned()))?;
 
+        #[cfg(feature = "telemetry")]
+        let id = queue
+            .enqueue(QueueItem::new(message))
+            .instrument(crate::telemetry::queue_enqueue_span(
+                queue.backend_name(),
+                &domain,
+            ))
+            .await?;
+
+        #[cfg(not(feature = "telemetry"))]
         let id = queue.enqueue(QueueItem::new(message)).await?;
+
         emit(
             TelemetryEvent::QueueEnqueued,
-            &TelemetryFields::new().domain(&domain),
+            &TelemetryFields::new()
+                .domain(&domain)
+                .queue_backend(queue.backend_name())
+                .delivery_mode(DeliveryMode::Queue.as_str()),
         );
 
         Ok(id)
+    }
+
+    async fn send_with_rate_limit(
+        &self,
+        message: EmailMessage,
+        rate_limit_action: RateLimitAction,
+        delivery_mode: DeliveryMode,
+    ) -> Result<SendReceipt> {
+        self.validate(&message)?;
+
+        match rate_limit_action {
+            RateLimitAction::Wait => self.wait_for_rate_limit(&message).await,
+            RateLimitAction::Check => {
+                if let Err(error) = self.check_rate_limit(&message) {
+                    emit(
+                        TelemetryEvent::RateLimited,
+                        &self
+                            .event_fields(&message, delivery_mode)
+                            .error_kind(error.telemetry_kind())
+                            .retryable(error.is_retryable()),
+                    );
+                    return Err(error);
+                }
+            }
+        }
+
+        self.send_validated(message, delivery_mode).await
+    }
+
+    pub(crate) async fn send_queued(&self, message: EmailMessage) -> Result<SendReceipt> {
+        #[cfg(feature = "telemetry")]
+        {
+            let provider = self.provider.provider_name();
+            let sender_domain = message.from_address().domain().to_owned();
+
+            return self
+                .send_with_rate_limit(message, RateLimitAction::Wait, DeliveryMode::Queue)
+                .instrument(crate::telemetry::send_span(
+                    provider,
+                    &sender_domain,
+                    DeliveryMode::Queue.as_str(),
+                ))
+                .await;
+        }
+
+        #[cfg(not(feature = "telemetry"))]
+        self.send_with_rate_limit(message, RateLimitAction::Wait, DeliveryMode::Queue)
+            .await
+    }
+
+    async fn send_validated(
+        &self,
+        message: EmailMessage,
+        delivery_mode: DeliveryMode,
+    ) -> Result<SendReceipt> {
+        let started = Instant::now();
+        emit(
+            TelemetryEvent::SendStarted,
+            &self.event_fields(&message, delivery_mode),
+        );
+
+        #[cfg(feature = "telemetry")]
+        let result = self
+            .provider
+            .send(&message)
+            .instrument(crate::telemetry::provider_send_span(
+                self.provider.provider_name(),
+                message.from_address().domain(),
+            ))
+            .await;
+
+        #[cfg(not(feature = "telemetry"))]
+        let result = self.provider.send(&message).await;
+
+        emit(
+            if result.is_ok() {
+                TelemetryEvent::SendAccepted
+            } else {
+                TelemetryEvent::SendFailed
+            },
+            &self.result_fields(
+                &message,
+                delivery_mode,
+                started.elapsed().as_millis(),
+                &result,
+            ),
+        );
+
+        result
+    }
+
+    fn event_fields<'a>(
+        &self,
+        message: &'a EmailMessage,
+        delivery_mode: DeliveryMode,
+    ) -> TelemetryFields<'a> {
+        TelemetryFields::new()
+            .domain(message.from_address().domain())
+            .provider(self.provider.provider_name())
+            .delivery_mode(delivery_mode.as_str())
+    }
+
+    fn result_fields<'a>(
+        &self,
+        message: &'a EmailMessage,
+        delivery_mode: DeliveryMode,
+        elapsed_ms: u128,
+        result: &Result<SendReceipt>,
+    ) -> TelemetryFields<'a> {
+        let fields = self
+            .event_fields(message, delivery_mode)
+            .elapsed_ms(elapsed_ms);
+
+        match result {
+            Ok(_receipt) => fields,
+            Err(error) => {
+                let fields = fields
+                    .error_kind(error.telemetry_kind())
+                    .retryable(error.is_retryable());
+
+                if let Some(status) = error.status_code() {
+                    fields.status_code(status)
+                } else {
+                    fields
+                }
+            }
+        }
     }
 
     fn validate(&self, message: &EmailMessage) -> Result<()> {
@@ -336,6 +468,12 @@ where
     fn check_rate_limit(&self, _message: &EmailMessage) -> Result<()> {
         Ok(())
     }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum RateLimitAction {
+    Wait,
+    Check,
 }
 
 #[derive(Debug)]
@@ -495,6 +633,12 @@ mod tests {
         let id = client.enqueue(message).await.expect("enqueue succeeds");
 
         assert!(!id.as_str().is_empty());
+    }
+
+    #[test]
+    fn delivery_mode_labels_are_stable_for_telemetry() {
+        assert_eq!(DeliveryMode::SendNow.as_str(), "send_now");
+        assert_eq!(DeliveryMode::Queue.as_str(), "queue");
     }
 
     #[cfg(feature = "queue-postgres")]

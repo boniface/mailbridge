@@ -1,6 +1,6 @@
 [package]
 name = "mailbridge"
-version = "0.2.1"
+version = "0.3.0"
 edition = "2024"
 rust-version = "1.94"
 license = "MIT"
@@ -88,6 +88,7 @@ uuid = { version = "1", features = ["v4", "serde"] }
 
 [dev-dependencies]
 tokio = { version = "1", features = ["macros", "rt-multi-thread", "time", "sync", "test-util"] }
+tracing-subscriber = { version = "0.3", features = ["env-filter", "fmt", "json"] }
 
 [[example]]
 name = "send_http"
@@ -128,3 +129,7 @@ required-features = ["brevo"]
 [[example]]
 name = "send_bird"
 required-features = ["bird"]
+
+[[example]]
+name = "opentelemetry_logging"
+required-features = ["telemetry"]

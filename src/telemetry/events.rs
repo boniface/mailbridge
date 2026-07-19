@@ -9,6 +9,21 @@ pub enum TelemetryEvent {
     RateLimited,
 }
 
+impl TelemetryEvent {
+    #[must_use]
+    pub const fn as_str(self) -> &'static str {
+        match self {
+            Self::SendStarted => "mailbridge.send.started",
+            Self::SendAccepted => "mailbridge.send.accepted",
+            Self::SendFailed => "mailbridge.send.failed",
+            Self::QueueEnqueued => "mailbridge.queue.enqueued",
+            Self::QueueRetryScheduled => "mailbridge.queue.retry_scheduled",
+            Self::QueueDeadLettered => "mailbridge.queue.dead_lettered",
+            Self::RateLimited => "mailbridge.rate_limited",
+        }
+    }
+}
+
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub struct TelemetryFields<'a> {
     domain: Option<&'a str>,
@@ -17,6 +32,9 @@ pub struct TelemetryFields<'a> {
     attempt_count: Option<u32>,
     queue_backend: Option<&'a str>,
     elapsed_ms: Option<u128>,
+    delivery_mode: Option<&'a str>,
+    error_kind: Option<&'a str>,
+    retryable: Option<bool>,
 }
 
 impl<'a> TelemetryFields<'a> {
@@ -29,6 +47,9 @@ impl<'a> TelemetryFields<'a> {
             attempt_count: None,
             queue_backend: None,
             elapsed_ms: None,
+            delivery_mode: None,
+            error_kind: None,
+            retryable: None,
         }
     }
 
@@ -67,6 +88,24 @@ impl<'a> TelemetryFields<'a> {
         self.elapsed_ms = Some(value);
         self
     }
+
+    #[must_use]
+    pub const fn delivery_mode(mut self, value: &'a str) -> Self {
+        self.delivery_mode = Some(value);
+        self
+    }
+
+    #[must_use]
+    pub const fn error_kind(mut self, value: &'a str) -> Self {
+        self.error_kind = Some(value);
+        self
+    }
+
+    #[must_use]
+    pub const fn retryable(mut self, value: bool) -> Self {
+        self.retryable = Some(value);
+        self
+    }
 }
 
 pub fn emit(event: TelemetryEvent, fields: &TelemetryFields<'_>) {
@@ -75,30 +114,61 @@ pub fn emit(event: TelemetryEvent, fields: &TelemetryFields<'_>) {
 
 #[cfg(feature = "telemetry")]
 fn emit_inner(event: TelemetryEvent, fields: &TelemetryFields<'_>) {
-    let event_name = event_name(event);
     tracing::info!(
-        event = event_name,
-        domain = fields.domain,
-        provider = fields.provider,
-        status_code = fields.status_code,
-        attempt_count = fields.attempt_count,
-        queue_backend = fields.queue_backend,
-        elapsed_ms = fields.elapsed_ms,
+        target: "mailbridge",
+        mailbridge_event = event.as_str(),
+        mailbridge_sender_domain = fields.domain,
+        mailbridge_provider = fields.provider,
+        mailbridge_status_code = fields.status_code,
+        mailbridge_retry_attempt = fields.attempt_count,
+        mailbridge_queue_backend = fields.queue_backend,
+        mailbridge_elapsed_ms = fields.elapsed_ms,
+        mailbridge_delivery_mode = fields.delivery_mode,
+        mailbridge_error_kind = fields.error_kind,
+        mailbridge_retryable = fields.retryable,
     );
 }
 
 #[cfg(not(feature = "telemetry"))]
 fn emit_inner(_event: TelemetryEvent, _fields: &TelemetryFields<'_>) {}
 
-#[cfg(feature = "telemetry")]
-fn event_name(event: TelemetryEvent) -> &'static str {
-    match event {
-        TelemetryEvent::SendStarted => "mailbridge.send.started",
-        TelemetryEvent::SendAccepted => "mailbridge.send.accepted",
-        TelemetryEvent::SendFailed => "mailbridge.send.failed",
-        TelemetryEvent::QueueEnqueued => "mailbridge.queue.enqueued",
-        TelemetryEvent::QueueRetryScheduled => "mailbridge.queue.retry_scheduled",
-        TelemetryEvent::QueueDeadLettered => "mailbridge.queue.dead_lettered",
-        TelemetryEvent::RateLimited => "mailbridge.rate_limited",
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn event_names_are_stable_and_namespaced() {
+        assert_eq!(
+            TelemetryEvent::SendStarted.as_str(),
+            "mailbridge.send.started"
+        );
+        assert_eq!(
+            TelemetryEvent::QueueDeadLettered.as_str(),
+            "mailbridge.queue.dead_lettered"
+        );
+    }
+
+    #[test]
+    fn fields_do_not_store_private_message_content() {
+        let fields = TelemetryFields::new()
+            .provider("hyvor-relay")
+            .domain("example.com")
+            .error_kind("temporary")
+            .retryable(true);
+
+        assert_eq!(
+            fields,
+            TelemetryFields {
+                domain: Some("example.com"),
+                provider: Some("hyvor-relay"),
+                status_code: None,
+                attempt_count: None,
+                queue_backend: None,
+                elapsed_ms: None,
+                delivery_mode: None,
+                error_kind: Some("temporary"),
+                retryable: Some(true),
+            }
+        );
     }
 }

@@ -1,5 +1,7 @@
 # Changelog
 
+[README](../README.md) | [Usage](usage.md) | [Architecture](architecture-and-design.md) | [Telemetry](telemetry.md) | [Roadmap](ROADMAP.md) | [Changelog](CHANGELOG.md)
+
 All notable changes to Mailbridge will be documented in this file.
 
 This project follows semantic versioning after the first crates.io release.
@@ -7,6 +9,29 @@ This project follows semantic versioning after the first crates.io release.
 ## Unreleased
 
 No unreleased changes.
+
+## 0.3.0 - 2026-07-19
+
+### Added
+
+- Added opt-in `tracing` spans for send, provider send, queue enqueue, queue
+  reserve, queue processing, retry scheduling, and dead-letter operations.
+- Added stable telemetry event and attribute naming for Mailbridge operations.
+- Added stable delivery mode labels for direct sends and queued worker sends.
+- Added safe error classification fields for telemetry without logging raw
+  provider messages, message bodies, attachment content, credentials, or full
+  recipient lists.
+- Added queue backend names to queue telemetry.
+- Added a no-credentials telemetry example.
+- Added public telemetry documentation covering `tracing` setup,
+  OpenTelemetry integration ownership, event names, span names, attributes,
+  and safety policy.
+
+### Changed
+
+- Updated the roadmap to mark the OpenTelemetry-friendly observability
+  milestone as delivered.
+- Updated usage and architecture documentation for the 0.3 release line.
 
 ## 0.2.1 - 2026-07-17
 

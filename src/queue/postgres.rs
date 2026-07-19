@@ -162,6 +162,10 @@ impl MailQueue for PostgresQueue {
         self
     }
 
+    fn backend_name(&self) -> &'static str {
+        "postgres"
+    }
+
     async fn enqueue(&self, item: QueueItem) -> Result<QueueId> {
         let id = QueueId::new_uuid();
         let message = item.into_message();

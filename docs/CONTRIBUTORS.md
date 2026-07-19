@@ -1,5 +1,7 @@
 # Contributors
 
+[README](../README.md) | [Usage](usage.md) | [Architecture](architecture-and-design.md) | [Telemetry](telemetry.md) | [Roadmap](ROADMAP.md) | [Changelog](CHANGELOG.md)
+
 Mailbridge is maintained by Boniface Kabaso.
 
 Contributions are welcome through issues, discussions, documentation updates,

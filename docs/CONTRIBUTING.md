@@ -1,5 +1,7 @@
 # Contributing
 
+[README](../README.md) | [Usage](usage.md) | [Architecture](architecture-and-design.md) | [Telemetry](telemetry.md) | [Roadmap](ROADMAP.md) | [Changelog](CHANGELOG.md)
+
 Thank you for considering a contribution to Mailbridge.
 
 Mailbridge is a provider-neutral transactional email library for Rust services.

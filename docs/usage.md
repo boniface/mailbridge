@@ -1,5 +1,7 @@
 # Usage Guide
 
+[README](../README.md) | [Usage](usage.md) | [Architecture](architecture-and-design.md) | [Telemetry](telemetry.md) | [Roadmap](ROADMAP.md) | [Changelog](CHANGELOG.md)
+
 This guide covers the public Mailbridge API for sending transactional email
 from Rust services. Mailbridge gives applications one typed sending surface
 while provider-specific HTTP, SMTP, authentication, queueing, retry, and
@@ -9,7 +11,7 @@ rate-limit details stay isolated behind feature flags.
 
 ```toml
 [dependencies]
-mailbridge = "0.2"
+mailbridge = "0.3"
 ```
 
 Default features enable:
@@ -23,14 +25,14 @@ For SMTP:
 
 ```toml
 [dependencies]
-mailbridge = { version = "0.2", features = ["smtp"] }
+mailbridge = { version = "0.3", features = ["smtp"] }
 ```
 
 For durable queues:
 
 ```toml
 [dependencies]
-mailbridge = { version = "0.2", features = ["queue-sqlite"] }
+mailbridge = { version = "0.3", features = ["queue-sqlite"] }
 ```
 
 Use only the queue backend features your application needs.
@@ -216,7 +218,7 @@ Enable the `smtp` feature and provide SMTP configuration:
 
 ```toml
 [dependencies]
-mailbridge = { version = "0.2", features = ["smtp"] }
+mailbridge = { version = "0.3", features = ["smtp"] }
 ```
 
 ```sh
@@ -260,7 +262,7 @@ configuration type:
 
 ```toml
 [dependencies]
-mailbridge = { version = "0.2", features = ["sendgrid"] }
+mailbridge = { version = "0.3", features = ["sendgrid"] }
 ```
 
 SendGrid:
@@ -370,7 +372,7 @@ Common features:
 | `queue-postgres` | PostgreSQL queue backend |
 | `queue-scylla` | ScyllaDB queue backend |
 | `rate-limit` | Local rate limiting |
-| `telemetry` | Tracing events |
+| `telemetry` | Tracing events and spans |
 | `dotenv` | Load `.env` before reading `RELAY_*` variables |
 
 `rustls` and `native-tls` are mutually exclusive.
@@ -383,6 +385,29 @@ calls unless they explicitly opt into `native-tls`.
 Queue backends using SQLx 0.9 enable `sqlx/runtime-tokio` and `sqlx/tls-rustls`
 through the Mailbridge queue feature flags. Because SQLx 0.9 requires Rust
 1.94, Mailbridge's crate-level MSRV is Rust 1.94 or newer.
+
+## Telemetry
+
+Enable the `telemetry` feature when the application wants Mailbridge send,
+provider, queue, retry, dead-letter, and rate-limit operations in its existing
+`tracing` pipeline:
+
+```toml
+[dependencies]
+mailbridge = { version = "0.3", features = ["telemetry"] }
+tracing-subscriber = { version = "0.3", features = ["env-filter", "fmt", "json"] }
+```
+
+Mailbridge does not install a global subscriber or configure OpenTelemetry
+exporters. The application owns that setup. See the
+[telemetry guide](telemetry.md) for the stable event, span, and attribute
+contract.
+
+Runnable local example:
+
+```sh
+cargo run --example opentelemetry_logging --features telemetry
+```
 
 ## Error Handling
 

@@ -7,6 +7,8 @@ use crate::error::Result;
 use crate::provider::MailProvider;
 use crate::queue::{MailQueue, QueueHandle, QueuedEmail};
 use crate::telemetry::{TelemetryEvent, TelemetryFields, emit};
+#[cfg(feature = "telemetry")]
+use tracing::Instrument;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct QueueWorkerConfig {
@@ -86,13 +88,36 @@ where
     /// Returns provider or queue backend errors encountered while reserving,
     /// sending, retrying, or dead-lettering messages.
     pub async fn run_once(&self) -> Result<usize> {
+        #[cfg(feature = "telemetry")]
+        let batch = self
+            .queue
+            .reserve_batch(self.config.worker_id(), self.config.batch_size)
+            .instrument(crate::telemetry::queue_reserve_span(
+                self.queue.backend_name(),
+            ))
+            .await?;
+
+        #[cfg(not(feature = "telemetry"))]
         let batch = self
             .queue
             .reserve_batch(self.config.worker_id(), self.config.batch_size)
             .await?;
+
         let count = batch.len();
 
         for queued in batch {
+            #[cfg(feature = "telemetry")]
+            {
+                let attempt_count = queued.attempt_count();
+                self.process_one(queued)
+                    .instrument(crate::telemetry::queue_process_span(
+                        self.queue.backend_name(),
+                        attempt_count,
+                    ))
+                    .await?;
+            }
+
+            #[cfg(not(feature = "telemetry"))]
             self.process_one(queued).await?;
         }
 
@@ -129,13 +154,34 @@ where
         let id = queued.id().clone();
         let attempt_count = queued.attempt_count();
 
-        match self.client.send(queued.into_message()).await {
+        match self.client.send_queued(queued.into_message()).await {
             Ok(receipt) => self.queue.mark_sent(&id, &receipt).await,
             Err(error) if error.is_retryable() && attempt_count < self.config.max_retries => {
                 emit(
                     TelemetryEvent::QueueRetryScheduled,
-                    &TelemetryFields::new().attempt_count(attempt_count.saturating_add(1)),
+                    &TelemetryFields::new()
+                        .queue_backend(self.queue.backend_name())
+                        .attempt_count(attempt_count.saturating_add(1))
+                        .error_kind(error.telemetry_kind())
+                        .retryable(true),
                 );
+
+                #[cfg(feature = "telemetry")]
+                return self
+                    .queue
+                    .release_for_retry(
+                        &id,
+                        retry_delay(self.config.retry_base_delay, attempt_count, &id),
+                        &error,
+                    )
+                    .instrument(crate::telemetry::queue_retry_span(
+                        self.queue.backend_name(),
+                        attempt_count.saturating_add(1),
+                        true,
+                    ))
+                    .await;
+
+                #[cfg(not(feature = "telemetry"))]
                 self.queue
                     .release_for_retry(
                         &id,
@@ -147,8 +193,25 @@ where
             Err(error) => {
                 emit(
                     TelemetryEvent::QueueDeadLettered,
-                    &TelemetryFields::new().attempt_count(attempt_count),
+                    &TelemetryFields::new()
+                        .queue_backend(self.queue.backend_name())
+                        .attempt_count(attempt_count)
+                        .error_kind(error.telemetry_kind())
+                        .retryable(error.is_retryable()),
                 );
+
+                #[cfg(feature = "telemetry")]
+                return self
+                    .queue
+                    .dead_letter(&id, &error)
+                    .instrument(crate::telemetry::queue_dead_letter_span(
+                        self.queue.backend_name(),
+                        attempt_count,
+                        error.telemetry_kind(),
+                    ))
+                    .await;
+
+                #[cfg(not(feature = "telemetry"))]
                 self.queue.dead_letter(&id, &error).await
             }
         }
